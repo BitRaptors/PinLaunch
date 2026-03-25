@@ -359,6 +359,9 @@ export default function CanvasPage() {
               onMove={(id, x, y) => {
                 pushState(moveNode(state, id, x, y))
               }}
+              onResize={(id, width, height, x, y) => {
+                pushState(updateNode(state, id, { width, height, x, y }))
+              }}
               onUpdateData={(data) => {
                 pushState(updateNode(state, node.id, { data }))
               }}

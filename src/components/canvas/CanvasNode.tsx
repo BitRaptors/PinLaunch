@@ -14,6 +14,7 @@ interface CanvasNodeProps {
   zoom: number
   onSelect: (id: string, shiftKey: boolean) => void
   onMove: (id: string, x: number, y: number) => void
+  onResize?: (id: string, width: number, height: number, x: number, y: number) => void
   onUpdateData?: (data: any) => void
   onToggleExclude?: (id: string) => void
   onEditInChat?: (id: string) => void
@@ -21,15 +22,33 @@ interface CanvasNodeProps {
   onDragStateChange?: (isDragging: boolean) => void
 }
 
-export default function CanvasNodeComponent({ node, selected, zoom, onSelect, onMove, onUpdateData, onToggleExclude, onEditInChat, onContextMenu, onDragStateChange }: CanvasNodeProps) {
+type Corner = 'nw' | 'ne' | 'sw' | 'se'
+
+export default function CanvasNodeComponent({ node, selected, zoom, onSelect, onMove, onResize, onUpdateData, onToggleExclude, onEditInChat, onContextMenu, onDragStateChange }: CanvasNodeProps) {
+  // --- Drag state ---
   const dragRef = useRef<{ startX: number; startY: number; nodeX: number; nodeY: number; currentDx: number; currentDy: number; moved: boolean } | null>(null)
   const [dragging, setDragging] = useState(false)
   const [dragOffset, setDragOffset] = useState<{ dx: number; dy: number } | null>(null)
+
+  // --- Resize state ---
+  const resizeRef = useRef<{
+    startX: number; startY: number
+    nodeX: number; nodeY: number; nodeW: number; nodeH: number
+    corner: Corner
+    currentDx: number; currentDy: number; currentDw: number; currentDh: number
+  } | null>(null)
+  const [resizing, setResizing] = useState(false)
+  const [resizeOffset, setResizeOffset] = useState<{ dx: number; dy: number; dw: number; dh: number } | null>(null)
+
+  // Stable refs for callbacks
   const onMoveRef = useRef(onMove)
   onMoveRef.current = onMove
+  const onResizeRef = useRef(onResize)
+  onResizeRef.current = onResize
   const onDragStateChangeRef = useRef(onDragStateChange)
   onDragStateChangeRef.current = onDragStateChange
 
+  // --- Drag handlers ---
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
     e.preventDefault()
@@ -44,7 +63,7 @@ export default function CanvasNodeComponent({ node, selected, zoom, onSelect, on
     setDragOffset(null)
     onDragStateChangeRef.current?.(true)
 
-    const handleMouseMove = (e: MouseEvent) => {
+    const onMouseMove = (e: MouseEvent) => {
       if (!dragRef.current) return
       dragRef.current.moved = true
       const dx = (e.clientX - dragRef.current.startX) / zoom
@@ -54,38 +73,109 @@ export default function CanvasNodeComponent({ node, selected, zoom, onSelect, on
       setDragOffset({ dx, dy })
     }
 
-    const handleMouseUp = () => {
+    const onMouseUp = () => {
       if (dragRef.current?.moved) {
-        const finalX = dragRef.current.nodeX + dragRef.current.currentDx
-        const finalY = dragRef.current.nodeY + dragRef.current.currentDy
-        onMoveRef.current(node.id, finalX, finalY)
+        onMoveRef.current(node.id, dragRef.current.nodeX + dragRef.current.currentDx, dragRef.current.nodeY + dragRef.current.currentDy)
       }
       dragRef.current = null
       setDragging(false)
       setDragOffset(null)
       onDragStateChangeRef.current?.(false)
-      window.removeEventListener('mousemove', handleMouseMove)
-      window.removeEventListener('mouseup', handleMouseUp)
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mouseup', onMouseUp)
     }
 
-    window.addEventListener('mousemove', handleMouseMove)
-    window.addEventListener('mouseup', handleMouseUp)
+    window.addEventListener('mousemove', onMouseMove)
+    window.addEventListener('mouseup', onMouseUp)
   }, [node.id, node.x, node.y, zoom, onSelect])
 
-  // During drag, apply offset visually via CSS transform instead of updating state
-  const visualX = dragOffset ? node.x + dragOffset.dx : node.x
-  const visualY = dragOffset ? node.y + dragOffset.dy : node.y
+  // --- Resize handlers ---
+  const handleResizeStart = useCallback((e: React.MouseEvent, corner: Corner) => {
+    e.stopPropagation()
+    e.preventDefault()
+    resizeRef.current = {
+      startX: e.clientX, startY: e.clientY,
+      nodeX: node.x, nodeY: node.y,
+      nodeW: node.width, nodeH: node.height,
+      corner,
+      currentDx: 0, currentDy: 0, currentDw: 0, currentDh: 0,
+    }
+    setResizing(true)
+    setResizeOffset(null)
+    onDragStateChangeRef.current?.(true)
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!resizeRef.current) return
+      const rawDx = (e.clientX - resizeRef.current.startX) / zoom
+      const rawDy = (e.clientY - resizeRef.current.startY) / zoom
+      const c = resizeRef.current.corner
+
+      let dx = 0, dy = 0, dw = 0, dh = 0
+      if (c === 'se') { dw = rawDx; dh = rawDy }
+      else if (c === 'sw') { dx = rawDx; dw = -rawDx; dh = rawDy }
+      else if (c === 'ne') { dw = rawDx; dy = rawDy; dh = -rawDy }
+      else if (c === 'nw') { dx = rawDx; dy = rawDy; dw = -rawDx; dh = -rawDy }
+
+      // Enforce minimum 30px
+      const newW = resizeRef.current.nodeW + dw
+      const newH = resizeRef.current.nodeH + dh
+      if (newW < 30) {
+        const clampDw = 30 - resizeRef.current.nodeW
+        if (c === 'sw' || c === 'nw') dx = -(clampDw)
+        dw = clampDw
+      }
+      if (newH < 30) {
+        const clampDh = 30 - resizeRef.current.nodeH
+        if (c === 'ne' || c === 'nw') dy = -(clampDh)
+        dh = clampDh
+      }
+
+      resizeRef.current.currentDx = dx
+      resizeRef.current.currentDy = dy
+      resizeRef.current.currentDw = dw
+      resizeRef.current.currentDh = dh
+      setResizeOffset({ dx, dy, dw, dh })
+    }
+
+    const onMouseUp = () => {
+      if (resizeRef.current) {
+        const r = resizeRef.current
+        const finalX = r.nodeX + r.currentDx
+        const finalY = r.nodeY + r.currentDy
+        const finalW = Math.max(30, r.nodeW + r.currentDw)
+        const finalH = Math.max(30, r.nodeH + r.currentDh)
+        onResizeRef.current?.(node.id, finalW, finalH, finalX, finalY)
+      }
+      resizeRef.current = null
+      setResizing(false)
+      setResizeOffset(null)
+      onDragStateChangeRef.current?.(false)
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mouseup', onMouseUp)
+    }
+
+    window.addEventListener('mousemove', onMouseMove)
+    window.addEventListener('mouseup', onMouseUp)
+  }, [node.id, node.x, node.y, node.width, node.height, zoom])
+
+  // --- Visual position/size ---
+  const visualX = dragOffset ? node.x + dragOffset.dx : (resizeOffset ? node.x + resizeOffset.dx : node.x)
+  const visualY = dragOffset ? node.y + dragOffset.dy : (resizeOffset ? node.y + resizeOffset.dy : node.y)
+  const visualW = resizeOffset ? Math.max(30, node.width + resizeOffset.dw) : node.width
+  const visualH = resizeOffset ? Math.max(30, node.height + resizeOffset.dh) : node.height
+
+  const isResizable = node.type !== 'artboard'
 
   const renderContent = () => {
     switch (node.type) {
       case 'shape':
-        return <ShapeNode width={node.width} height={node.height} data={node.data as any} selected={selected} onMouseDown={handleMouseDown} />
+        return <ShapeNode width={visualW} height={visualH} data={node.data as any} selected={selected} onMouseDown={handleMouseDown} />
       case 'widget':
-        return <WidgetNode width={node.width} height={node.height} data={node.data as any} selected={selected} onMouseDown={handleMouseDown} />
+        return <WidgetNode width={visualW} height={visualH} data={node.data as any} selected={selected} onMouseDown={handleMouseDown} />
       case 'image':
-        return <ImageNode width={node.width} height={node.height} data={node.data as any} selected={selected} onMouseDown={handleMouseDown} />
+        return <ImageNode width={visualW} height={visualH} data={node.data as any} selected={selected} onMouseDown={handleMouseDown} />
       case 'document':
-        return <DocumentNode width={node.width} height={node.height} data={node.data as any} selected={selected} onMouseDown={handleMouseDown} onUpdateData={(newData) => onUpdateData?.(newData)} />
+        return <DocumentNode width={visualW} height={visualH} data={node.data as any} selected={selected} onMouseDown={handleMouseDown} onUpdateData={(newData) => onUpdateData?.(newData)} />
       case 'artboard':
         return (
           <ArtboardNode
@@ -109,6 +199,18 @@ export default function CanvasNodeComponent({ node, selected, zoom, onSelect, on
     onContextMenu?.(node.id, e.clientX, e.clientY)
   }, [node.id, onContextMenu])
 
+  const handleSize = 8
+  const handleStyle = (cursor: string): React.CSSProperties => ({
+    position: 'absolute',
+    width: handleSize,
+    height: handleSize,
+    backgroundColor: 'rgba(34, 197, 94, 0.9)',
+    border: '1px solid rgba(255,255,255,0.8)',
+    borderRadius: 1,
+    cursor,
+    zIndex: 10,
+  })
+
   return (
     <div
       className="absolute canvas-node"
@@ -116,7 +218,7 @@ export default function CanvasNodeComponent({ node, selected, zoom, onSelect, on
         left: visualX,
         top: visualY,
         zIndex: node.zIndex,
-        cursor: dragging ? 'grabbing' : 'grab',
+        cursor: dragging ? 'grabbing' : (resizing ? 'default' : 'grab'),
         outline: selected ? '2px solid rgba(34, 197, 94, 0.7)' : 'none',
         outlineOffset: '4px',
         backgroundColor: selected ? 'rgba(34, 197, 94, 0.06)' : 'transparent',
@@ -126,6 +228,15 @@ export default function CanvasNodeComponent({ node, selected, zoom, onSelect, on
       onContextMenu={handleContextMenu}
     >
       {renderContent()}
+
+      {selected && isResizable && (
+        <>
+          <div style={{ ...handleStyle('nw-resize'), top: -handleSize / 2 - 2, left: -handleSize / 2 - 2 }} onMouseDown={(e) => handleResizeStart(e, 'nw')} />
+          <div style={{ ...handleStyle('ne-resize'), top: -handleSize / 2 - 2, right: -handleSize / 2 - 2 }} onMouseDown={(e) => handleResizeStart(e, 'ne')} />
+          <div style={{ ...handleStyle('sw-resize'), bottom: -handleSize / 2 - 2, left: -handleSize / 2 - 2 }} onMouseDown={(e) => handleResizeStart(e, 'sw')} />
+          <div style={{ ...handleStyle('se-resize'), bottom: -handleSize / 2 - 2, right: -handleSize / 2 - 2 }} onMouseDown={(e) => handleResizeStart(e, 'se')} />
+        </>
+      )}
     </div>
   )
 }
