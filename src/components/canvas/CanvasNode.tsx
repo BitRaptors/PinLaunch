@@ -237,14 +237,17 @@ export default function CanvasNodeComponent({ node, selected, zoom, externalDrag
     onContextMenu?.(node.id, e.clientX, e.clientY)
   }, [node.id, onContextMenu])
 
-  const handleSize = 8
+  // Fixed screen-size handles regardless of zoom level
+  const handleScreenSize = 12
+  const handleSize = handleScreenSize / zoom
+  const handleOffset = handleSize / 2 + 2 / zoom
   const handleStyle = (cursor: string): React.CSSProperties => ({
     position: 'absolute',
     width: handleSize,
     height: handleSize,
     backgroundColor: 'rgba(34, 197, 94, 0.9)',
-    border: '1px solid rgba(255,255,255,0.8)',
-    borderRadius: 1,
+    border: `${1 / zoom}px solid rgba(255,255,255,0.8)`,
+    borderRadius: 2 / zoom,
     cursor,
     zIndex: 10,
   })
@@ -257,8 +260,8 @@ export default function CanvasNodeComponent({ node, selected, zoom, externalDrag
         top: visualY,
         zIndex: node.zIndex,
         cursor: dragging ? 'grabbing' : (resizing ? 'default' : 'grab'),
-        outline: selected ? '2px solid rgba(34, 197, 94, 0.7)' : 'none',
-        outlineOffset: '4px',
+        outline: selected ? `${2 / zoom}px solid rgba(34, 197, 94, 0.7)` : 'none',
+        outlineOffset: `${4 / zoom}px`,
         backgroundColor: selected ? 'rgba(34, 197, 94, 0.06)' : 'transparent',
         borderRadius: '4px',
         padding: selected ? '2px' : '0',
@@ -269,10 +272,10 @@ export default function CanvasNodeComponent({ node, selected, zoom, externalDrag
 
       {selected && isResizable && (
         <>
-          <div style={{ ...handleStyle('nw-resize'), top: -handleSize / 2 - 2, left: -handleSize / 2 - 2 }} onMouseDown={(e) => handleResizeStart(e, 'nw')} />
-          <div style={{ ...handleStyle('ne-resize'), top: -handleSize / 2 - 2, right: -handleSize / 2 - 2 }} onMouseDown={(e) => handleResizeStart(e, 'ne')} />
-          <div style={{ ...handleStyle('sw-resize'), bottom: -handleSize / 2 - 2, left: -handleSize / 2 - 2 }} onMouseDown={(e) => handleResizeStart(e, 'sw')} />
-          <div style={{ ...handleStyle('se-resize'), bottom: -handleSize / 2 - 2, right: -handleSize / 2 - 2 }} onMouseDown={(e) => handleResizeStart(e, 'se')} />
+          <div style={{ ...handleStyle('nw-resize'), top: -handleOffset, left: -handleOffset }} onMouseDown={(e) => handleResizeStart(e, 'nw')} />
+          <div style={{ ...handleStyle('ne-resize'), top: -handleOffset, right: -handleOffset }} onMouseDown={(e) => handleResizeStart(e, 'ne')} />
+          <div style={{ ...handleStyle('sw-resize'), bottom: -handleOffset, left: -handleOffset }} onMouseDown={(e) => handleResizeStart(e, 'sw')} />
+          <div style={{ ...handleStyle('se-resize'), bottom: -handleOffset, right: -handleOffset }} onMouseDown={(e) => handleResizeStart(e, 'se')} />
         </>
       )}
     </div>
