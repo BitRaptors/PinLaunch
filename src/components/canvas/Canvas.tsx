@@ -39,7 +39,7 @@ export default function Canvas({ children, onTransformChange }: CanvasProps) {
         initialPositionX={0}
         initialPositionY={0}
         limitToBounds={false}
-        panning={{ velocityDisabled: true }}
+        panning={{ velocityDisabled: true, excluded: ['canvas-node'] }}
         onTransformed={handleTransform}
         doubleClick={{ disabled: true }}
       >
