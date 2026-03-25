@@ -182,7 +182,7 @@ export function buildPrompt(input: GenerateInput): string {
         `**Description:** ${rc.description}\n` +
         `**Language:** ${rc.language}\n` +
         `**Topics:** ${rc.topics.join(", ")}\n` +
-        (rc.stars > 0 ? `**GitHub Stars:** ${rc.stars.toLocaleString()}\n` : "")
+        (rc.stars > 0 ? `**GitHub Stars:** ${rc.stars.toLocaleString('en-US')}\n` : "")
     );
 
     // 7. Tech stack (extracted deps, inferred project type, condensed file tree)
