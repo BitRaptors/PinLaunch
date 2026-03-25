@@ -1,6 +1,7 @@
 import { getDb } from "@/lib/db";
 import { generateWithGemini, generateWithClaude, writeGeneratedSite } from "@/lib/generate";
 import { getRepoContent } from "@/lib/github";
+import { detectViteProject } from "@/lib/vite-server";
 import { NextRequest, NextResponse } from "next/server";
 import path from "path";
 
@@ -44,10 +45,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Generation failed: ${error.message}` }, { status: 500 });
   }
 
+  const isVite = detectViteProject(outputDir);
+
   return NextResponse.json({
     outputDir,
     fileCount: Object.keys(files).length,
     files: Object.keys(files),
     previewUrl: `/api/preview/${dirName}/`,
+    isVite,
   });
 }

@@ -128,8 +128,15 @@ export function mapReadmeToLandingPageSections(sections: Record<string, string>)
   return result;
 }
 
+export function getActiveFramework(presets: { category: string; name: string }[]): string | null {
+  const fw = presets.find((p) => p.category === "framework");
+  return fw?.name ?? null;
+}
+
 export function buildPrompt(input: GenerateInput): string {
   const sections: string[] = [];
+  const framework = getActiveFramework(input.presets);
+  const isVite = framework === "React (Vite)";
 
   // 1. Role & task
   sections.push(prompts.task);
@@ -220,7 +227,7 @@ export function buildPrompt(input: GenerateInput): string {
   }
 
   // 12. Output format
-  sections.push(prompts.geminiOutputFormat);
+  sections.push(isVite ? prompts.geminiOutputFormatVite : prompts.geminiOutputFormat);
 
   return sections.join("\n\n");
 }
@@ -288,9 +295,13 @@ function copyPinScreenshotsToDir(pins: GenerateInput["pins"], outputDir: string)
 
 export function buildClaudePrompt(input: GenerateInput, outputDir: string): string {
   const prompt = buildPrompt(input);
+  const framework = getActiveFramework(input.presets);
+  const isVite = framework === "React (Vite)";
+  const geminiFormat = isVite ? prompts.geminiOutputFormatVite : prompts.geminiOutputFormat;
+  const claudeFormat = isVite ? prompts.claudeOutputFormatVite : prompts.claudeOutputFormat;
   let claudePrompt =
     prompts.claudeSystemPrefix.replace("{{outputDir}}", outputDir) +
-    prompt.replace(prompts.geminiOutputFormat, prompts.claudeOutputFormat);
+    prompt.replace(geminiFormat, claudeFormat);
 
   // Tell Claude to look at the reference screenshots
   const screenshotPaths = input.pins

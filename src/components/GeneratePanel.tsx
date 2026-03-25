@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import ClaudeTerminal from "./ClaudeTerminal";
+import ViteSetupTerminal from "./ViteSetupTerminal";
 
 interface GeneratePanelProps {
-  onSiteReady: (siteDir: string, sessionId?: string, provider?: string) => void;
+  onSiteReady: (siteDir: string, sessionId?: string, provider?: string, previewUrl?: string, isVite?: boolean) => void;
   onFileChange: () => void;
 }
 
@@ -20,6 +21,9 @@ export default function GeneratePanel({ onSiteReady, onFileChange }: GeneratePan
     outputDir: string;
   } | null>(null);
   const [error, setError] = useState("");
+  // Gemini+Vite: after generation, run Vite setup in a second phase
+  const [viteSetupDir, setViteSetupDir] = useState<string | null>(null);
+  const [viteSetupContext, setViteSetupContext] = useState<{ dirName: string; fileCount: number; files: string[]; outputDir: string } | null>(null);
 
   useEffect(() => {
     fetch("/api/settings")
@@ -31,6 +35,8 @@ export default function GeneratePanel({ onSiteReady, onFileChange }: GeneratePan
   const generate = async () => {
     setError("");
     setResult(null);
+    setViteSetupDir(null);
+    setViteSetupContext(null);
 
     if (provider === "claude") {
       setStreaming(true);
@@ -48,10 +54,15 @@ export default function GeneratePanel({ onSiteReady, onFileChange }: GeneratePan
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || "Generation failed");
+      } else if (data.isVite) {
+        // Vite project: show setup terminal for npm install + dev server
+        const dirName = data.outputDir.split("/").pop() || data.outputDir;
+        setViteSetupDir(dirName);
+        setViteSetupContext({ dirName, fileCount: data.fileCount, files: data.files, outputDir: data.outputDir });
       } else {
         setResult(data);
         const dirName = data.outputDir.split("/").pop() || data.outputDir;
-        onSiteReady(dirName, undefined, "gemini");
+        onSiteReady(dirName, undefined, "gemini", data.previewUrl, false);
       }
     } catch (e: any) {
       setError(e.message);
@@ -84,10 +95,10 @@ export default function GeneratePanel({ onSiteReady, onFileChange }: GeneratePan
 
       <button
         onClick={generate}
-        disabled={generating || streaming}
+        disabled={generating || streaming || !!viteSetupDir}
         className="mt-3 w-full rounded-full bg-[var(--accent)] py-3 text-sm font-bold text-white shadow-[0_2px_16px_var(--accent-glow)] transition-all duration-200 hover:bg-[var(--accent-hover)] hover:shadow-[0_4px_24px_var(--accent-glow)] hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:shadow-none disabled:hover:scale-100"
       >
-        {generating || streaming ? (
+        {generating || streaming || viteSetupDir ? (
           <span className="flex items-center justify-center gap-2">
             <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
@@ -112,13 +123,34 @@ export default function GeneratePanel({ onSiteReady, onFileChange }: GeneratePan
             setStreaming(false);
             setResult(r);
             const dirName = r.outputDir.split("/").pop() || r.outputDir;
-            onSiteReady(dirName, r.sessionId, "claude");
+            onSiteReady(dirName, r.sessionId, "claude", r.previewUrl, r.isVite);
           }}
           onError={(msg) => {
             setStreaming(false);
             setError(msg);
           }}
           onFileChange={onFileChange}
+        />
+      )}
+
+      {viteSetupDir && (
+        <ViteSetupTerminal
+          siteDir={viteSetupDir}
+          onComplete={(setupResult) => {
+            const ctx = viteSetupContext!;
+            setViteSetupDir(null);
+            setResult({
+              previewUrl: setupResult.previewUrl,
+              fileCount: ctx.fileCount,
+              files: ctx.files,
+              outputDir: ctx.outputDir,
+            });
+            onSiteReady(ctx.dirName, undefined, "gemini", setupResult.previewUrl, true);
+          }}
+          onError={(msg) => {
+            setViteSetupDir(null);
+            setError(msg);
+          }}
         />
       )}
 

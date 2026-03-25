@@ -13,12 +13,14 @@ interface TerminalEntry {
 
 interface ClaudeTerminalProps {
   userPrompt: string;
+  streamUrl?: string; // defaults to /api/generate/stream
   onComplete: (result: {
     previewUrl: string;
     fileCount: number;
     files: string[];
     outputDir: string;
     sessionId?: string;
+    isVite?: boolean;
   }) => void;
   onError: (message: string) => void;
   onFileChange?: () => void;
@@ -49,7 +51,7 @@ const TOOL_ICONS: Record<string, string> = {
   Grep: "\uD83D\uDD0E",    // 🔎
 };
 
-export default function ClaudeTerminal({ userPrompt, onComplete, onError, onFileChange }: ClaudeTerminalProps) {
+export default function ClaudeTerminal({ userPrompt, streamUrl, onComplete, onError, onFileChange }: ClaudeTerminalProps) {
   const [entries, setEntries] = useState<TerminalEntry[]>([]);
   const [expanded, setExpanded] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -62,11 +64,11 @@ export default function ClaudeTerminal({ userPrompt, onComplete, onError, onFile
     let cancelled = false;
 
     async function run() {
-      addEntry("system", "Starting Claude Code...");
+      addEntry("system", streamUrl ? "Starting generation..." : "Starting Claude Code...");
 
       let res: Response;
       try {
-        res = await fetch("/api/generate/stream", {
+        res = await fetch(streamUrl || "/api/generate/stream", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userPrompt }),
@@ -133,6 +135,24 @@ export default function ClaudeTerminal({ userPrompt, onComplete, onError, onFile
   }
 
   function handleEvent(event: any) {
+    // Vite setup events (npm install, dev server startup)
+    if (event.type === "vite-setup") {
+      if (event.phase === "install") {
+        addEntry("system", event.message);
+      } else if (event.phase === "install-log") {
+        addEntry("tool-result", `  ${event.message}`);
+      } else if (event.phase === "starting") {
+        addEntry("system", event.message);
+      } else if (event.phase === "starting-log") {
+        addEntry("tool-result", `  ${event.message}`);
+      } else if (event.phase === "ready") {
+        addEntry("system", event.message);
+      } else if (event.phase === "error") {
+        addEntry("system", event.message);
+      }
+      return;
+    }
+
     // Custom done event (injected by our stream route)
     if (event.type === "done") {
       addEntry("system", `Done! ${event.fileCount} file(s) generated.`);
@@ -142,6 +162,7 @@ export default function ClaudeTerminal({ userPrompt, onComplete, onError, onFile
         files: event.files,
         outputDir: event.outputDir,
         sessionId: sessionIdRef.current,
+        isVite: event.isVite,
       });
       return;
     }

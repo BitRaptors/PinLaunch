@@ -11,6 +11,7 @@ interface RefinementChatProps {
   siteDir: string;
   sessionId?: string;
   provider: string;
+  isVite?: boolean;
   messages: ChatMessage[];
   onMessage: (msg: ChatMessage) => void;
   onFileChange: () => void;
@@ -20,6 +21,7 @@ export default function RefinementChat({
   siteDir,
   sessionId,
   provider,
+  isVite,
   messages,
   onMessage,
   onFileChange,
@@ -92,12 +94,12 @@ export default function RefinementChat({
 
               if (event.type === "user" && event.tool_use_result) {
                 const r = event.tool_use_result;
-                if (r.type === "create" || r.type === "edit") {
+                if ((r.type === "create" || r.type === "edit") && !isVite) {
                   onFileChange();
                 }
               }
 
-              if (event.type === "done") {
+              if (event.type === "done" && !isVite) {
                 onFileChange();
               }
             } catch {
@@ -110,7 +112,7 @@ export default function RefinementChat({
       } else {
         const data = await res.json();
         onMessage({ role: "assistant", content: data.message || "Changes applied." });
-        onFileChange();
+        if (!isVite) onFileChange();
       }
     } catch (e: any) {
       onMessage({ role: "assistant", content: `Error: ${e.message}` });

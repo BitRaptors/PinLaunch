@@ -1,5 +1,6 @@
 import { getDb } from "@/lib/db";
 import { streamClaudeRefinement, collectFiles } from "@/lib/generate";
+import { detectViteProject } from "@/lib/vite-server";
 import { NextRequest, NextResponse } from "next/server";
 import path from "path";
 import fs from "fs";
@@ -77,9 +78,11 @@ export async function POST(req: NextRequest) {
       fs.writeFileSync(fullPath, content, "utf-8");
     }
 
+    const isVite = detectViteProject(outputDir);
     return NextResponse.json({
       message: `Updated ${Object.keys(updatedFiles).length} file(s).`,
       files: Object.keys(updatedFiles),
+      isVite,
     });
   } catch (error: any) {
     return NextResponse.json({ error: `Refinement failed: ${error.message}` }, { status: 500 });

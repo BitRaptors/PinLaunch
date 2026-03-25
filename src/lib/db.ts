@@ -52,9 +52,8 @@ function seedPresets(db: Database.Database) {
     { name: "Professional", category: "tone", value: "Formal, authoritative, data-driven language." },
     { name: "Casual & Friendly", category: "tone", value: "Conversational, approachable, uses 'you' language." },
     { name: "Technical", category: "tone", value: "Developer-focused, precise, shows code examples." },
-    { name: "Plain HTML/CSS", category: "framework", value: "Single index.html with inline CSS and vanilla JS." },
     { name: "Tailwind", category: "framework", value: "Single HTML file using Tailwind CSS via CDN." },
-    { name: "React (Vite)", category: "framework", value: "Vite + React project with Tailwind." },
+    { name: "React (Vite)", category: "framework", value: "Vite + React project with Tailwind and react-router v7." },
   ];
 
   const insert = db.prepare("INSERT INTO presets (name, category, value) VALUES (?, ?, ?)");
