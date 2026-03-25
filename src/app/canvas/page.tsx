@@ -9,6 +9,7 @@ import Sidebar from '@/components/canvas/Sidebar'
 import { CanvasState, CanvasNode, createEmptyState, VIEWPORT_SIZES } from '@/lib/canvas-types'
 import type { ShapeType, WidgetType } from '@/lib/canvas-types'
 import { addNode, removeNode, updateNode, moveNode, bringToFront, sendToBack, createUndoRedoManager } from '@/lib/canvas-state'
+import Header from '@/components/Header'
 
 export default function CanvasPage() {
   const [state, setState] = useState<CanvasState>(createEmptyState())
@@ -18,7 +19,7 @@ export default function CanvasPage() {
   const [viewportX, setViewportX] = useState(0)
   const [viewportY, setViewportY] = useState(0)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [provider, setProvider] = useState('gemini')
+  const [provider, setProvider] = useState('claude')
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; nodeId: string } | null>(null)
   const [isDraggingNode, setIsDraggingNode] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -33,6 +34,11 @@ export default function CanvasPage() {
         setState(data.state)
         undoMgr.current.push(data.state)
       })
+    // Fetch provider from settings
+    fetch('/api/settings')
+      .then(r => r.json())
+      .then(s => { if (s.ai_provider) setProvider(s.ai_provider) })
+      .catch(() => {})
   }, [])
 
   const saveState = useCallback((newState: CanvasState) => {
@@ -228,12 +234,45 @@ export default function CanvasPage() {
   const containerWidth = containerRef.current?.clientWidth ?? 800
   const containerHeight = containerRef.current?.clientHeight ?? 600
 
+  const handleSelectProject = useCallback(async (project: any) => {
+    // Load project as artboard on canvas
+    const siteDir = project.site_dir
+    const viewport = 'desktop' as const
+    const { width, height } = VIEWPORT_SIZES[viewport]
+    const node: CanvasNode = {
+      id: crypto.randomUUID(),
+      type: 'artboard',
+      x: state.nodes.length * 200,
+      y: 100,
+      width, height,
+      zIndex: 0,
+      data: {
+        name: project.name || siteDir.replace('site-', ''),
+        siteDir,
+        viewport,
+        provider: (project.provider || 'claude') as 'gemini' | 'claude',
+        sessionId: project.session_id,
+      },
+    }
+    pushState(addNode(state, node))
+  }, [state, pushState])
+
+  const handleSettingsChange = useCallback((settings: Record<string, string>) => {
+    if (settings.ai_provider) setProvider(settings.ai_provider)
+  }, [])
+
   return (
-    <div
-      className="flex h-screen"
-      style={{ background: 'var(--bg)', color: 'var(--text)' }}
-      onClick={closeContextMenu}
-    >
+    <div className="flex flex-col h-screen" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
+      <Header
+        onSelectProject={handleSelectProject}
+        onNewProject={() => {}}
+        onDeleteProject={() => {}}
+        onSettingsChange={handleSettingsChange}
+      />
+      <div
+        className="flex flex-1 overflow-hidden"
+        onClick={closeContextMenu}
+      >
       <Sidebar
         selectedNode={selectedNode}
         provider={provider}
@@ -366,6 +405,7 @@ export default function CanvasPage() {
             </button>
           </div>
         )}
+      </div>
       </div>
     </div>
   )
