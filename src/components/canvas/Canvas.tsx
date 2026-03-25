@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useCallback, useState, ReactNode } from 'react'
+import { useRef, useCallback, useState, useEffect, ReactNode } from 'react'
 import { TransformWrapper, TransformComponent, ReactZoomPanPinchRef } from 'react-zoom-pan-pinch'
 
 interface CanvasProps {
@@ -77,6 +77,45 @@ export default function Canvas({ children, panningDisabled, onTransformChange, o
     window.addEventListener('mouseup', handleMouseUp)
   }, [transform, onLassoSelect])
 
+  // Custom wheel handler: two-finger scroll → pan, pinch (ctrlKey) → zoom
+  useEffect(() => {
+    const el = wrapperRef.current
+    if (!el) return
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      const api = transformRef.current
+      if (!api) return
+
+      const ts = api.instance?.transformState
+      if (!ts) return
+
+      if (e.ctrlKey || e.metaKey) {
+        // Pinch zoom gesture (trackpad pinch sends ctrlKey + deltaY)
+        const zoomFactor = Math.exp(-e.deltaY * 0.01)
+        const newScale = Math.min(4, Math.max(0.1, ts.scale * zoomFactor))
+
+        // Zoom toward cursor position
+        const rect = el.getBoundingClientRect()
+        const cursorX = e.clientX - rect.left
+        const cursorY = e.clientY - rect.top
+        const ratio = newScale / ts.scale
+        const newX = cursorX - (cursorX - ts.positionX) * ratio
+        const newY = cursorY - (cursorY - ts.positionY) * ratio
+
+        api.setTransform(newX, newY, newScale, 0)
+      } else {
+        // Two-finger scroll → pan
+        const newX = ts.positionX - e.deltaX
+        const newY = ts.positionY - e.deltaY
+        api.setTransform(newX, newY, ts.scale, 0)
+      }
+    }
+
+    el.addEventListener('wheel', handleWheel, { passive: false })
+    return () => el.removeEventListener('wheel', handleWheel)
+  }, [])
+
   // Compute lasso rectangle in screen space for the overlay
   const lassoRect = lasso ? {
     left: Math.min(lasso.startX, lasso.currentX),
@@ -104,6 +143,8 @@ export default function Canvas({ children, panningDisabled, onTransformChange, o
         initialPositionY={0}
         limitToBounds={false}
         panning={{ velocityDisabled: true, excluded: ['canvas-node'], disabled: panningDisabled || !!lasso }}
+        wheel={{ disabled: true }}
+        pinch={{ disabled: false }}
         onTransformed={handleTransform}
         doubleClick={{ disabled: true }}
       >
