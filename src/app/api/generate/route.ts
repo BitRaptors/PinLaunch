@@ -1,5 +1,5 @@
 import { getDb } from "@/lib/db";
-import { generateWithGemini, generateWithClaude, writeGeneratedSite } from "@/lib/generate";
+import { generateWithGemini, generateWithClaude, writeGeneratedSite, getActiveFramework } from "@/lib/generate";
 import { getRepoContent } from "@/lib/github";
 import { detectViteProject } from "@/lib/vite-server";
 import { NextRequest, NextResponse } from "next/server";
@@ -46,6 +46,18 @@ export async function POST(req: NextRequest) {
   }
 
   const isVite = detectViteProject(outputDir);
+  const framework = getActiveFramework(activePresets);
+  const repoName = settings.github_repo?.split("/").pop() || null;
+  const projectName = repoName ? `${repoName} Landing Page` : `Project ${new Date().toLocaleDateString()}`;
+
+  let projectId: number | undefined;
+  try {
+    const chosenProv = provider || settings.ai_provider || "gemini";
+    const result = db.prepare(
+      "INSERT INTO projects (name, site_dir, provider, framework, github_repo) VALUES (?, ?, ?, ?, ?)"
+    ).run(projectName, dirName, chosenProv, framework, settings.github_repo || null);
+    projectId = result.lastInsertRowid as number;
+  } catch {}
 
   return NextResponse.json({
     outputDir,
@@ -53,5 +65,6 @@ export async function POST(req: NextRequest) {
     files: Object.keys(files),
     previewUrl: `/api/preview/${dirName}/`,
     isVite,
+    projectId,
   });
 }

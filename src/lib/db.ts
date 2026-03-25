@@ -31,6 +31,17 @@ export function getDb(): Database.Database {
         value TEXT NOT NULL,
         is_active INTEGER DEFAULT 0
       );
+      CREATE TABLE IF NOT EXISTS projects (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        site_dir TEXT NOT NULL UNIQUE,
+        provider TEXT NOT NULL,
+        framework TEXT,
+        session_id TEXT,
+        github_repo TEXT,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      );
     `);
     seedPresets(db);
   }
@@ -52,7 +63,7 @@ function seedPresets(db: Database.Database) {
     { name: "Professional", category: "tone", value: "Formal, authoritative, data-driven language." },
     { name: "Casual & Friendly", category: "tone", value: "Conversational, approachable, uses 'you' language." },
     { name: "Technical", category: "tone", value: "Developer-focused, precise, shows code examples." },
-    { name: "Tailwind", category: "framework", value: "Single HTML file using Tailwind CSS via CDN." },
+    { name: "HTML + Tailwind", category: "framework", value: "Single HTML file using Tailwind CSS via CDN." },
     { name: "React (Vite)", category: "framework", value: "Vite + React project with Tailwind and react-router v7." },
   ];
 

@@ -19,6 +19,11 @@ export async function POST(req: NextRequest) {
   }
 
   const db = getDb();
+
+  // Bump project updated_at
+  try {
+    db.prepare("UPDATE projects SET updated_at = datetime('now') WHERE site_dir = ?").run(siteDir);
+  } catch {}
   const settingsRows = db.prepare("SELECT key, value FROM settings").all() as { key: string; value: string }[];
   const settings: Record<string, string> = {};
   for (const row of settingsRows) settings[row.key] = row.value;

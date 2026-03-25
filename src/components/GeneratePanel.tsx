@@ -1,19 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import ClaudeTerminal from "./ClaudeTerminal";
 import ViteSetupTerminal from "./ViteSetupTerminal";
 
 interface GeneratePanelProps {
+  provider: string;
   onSiteReady: (siteDir: string, sessionId?: string, provider?: string, previewUrl?: string, isVite?: boolean) => void;
   onFileChange: () => void;
 }
 
-export default function GeneratePanel({ onSiteReady, onFileChange }: GeneratePanelProps) {
+export default function GeneratePanel({ provider, onSiteReady, onFileChange }: GeneratePanelProps) {
   const [prompt, setPrompt] = useState("");
   const [generating, setGenerating] = useState(false);
   const [streaming, setStreaming] = useState(false);
-  const [provider, setProvider] = useState<string>("");
   const [result, setResult] = useState<{
     previewUrl: string;
     fileCount: number;
@@ -24,13 +24,6 @@ export default function GeneratePanel({ onSiteReady, onFileChange }: GeneratePan
   // Gemini+Vite: after generation, run Vite setup in a second phase
   const [viteSetupDir, setViteSetupDir] = useState<string | null>(null);
   const [viteSetupContext, setViteSetupContext] = useState<{ dirName: string; fileCount: number; files: string[]; outputDir: string } | null>(null);
-
-  useEffect(() => {
-    fetch("/api/settings")
-      .then((r) => r.json())
-      .then((s) => setProvider(s.ai_provider || "gemini"))
-      .catch(() => {});
-  }, []);
 
   const generate = async () => {
     setError("");

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 interface Props {
   onClose: () => void;
+  onSettingsChange?: (settings: Record<string, string>) => void;
 }
 
 interface HealthStatus {
@@ -11,7 +12,7 @@ interface HealthStatus {
   detail: string;
 }
 
-export default function SettingsPanel({ onClose }: Props) {
+export default function SettingsPanel({ onClose, onSettingsChange }: Props) {
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [health, setHealth] = useState<Record<string, HealthStatus> | null>(null);
@@ -33,6 +34,7 @@ export default function SettingsPanel({ onClose }: Props) {
       body: JSON.stringify(settings),
     });
     setSaving(false);
+    onSettingsChange?.(settings);
     onClose();
   };
 

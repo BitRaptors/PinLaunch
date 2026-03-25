@@ -36,7 +36,12 @@ export async function POST(req: NextRequest) {
   const dirName = `site-${Date.now()}`;
   const outputDir = path.join(process.cwd(), "output", dirName);
 
-  const isVitePreset = getActiveFramework(activePresets) === "React (Vite)";
+  const framework = getActiveFramework(activePresets);
+  const isVitePreset = framework === "React (Vite)";
+
+  // Derive project name from repo or timestamp
+  const repoName = settings.github_repo?.split("/").pop() || null;
+  const projectName = repoName ? `${repoName} Landing Page` : `Project ${new Date().toLocaleDateString()}`;
 
   const claudeStream = streamClaudeGeneration(input, outputDir);
   const encoder = new TextEncoder();
@@ -47,6 +52,7 @@ export async function POST(req: NextRequest) {
       const reader = claudeStream.getReader();
       const decoder = new TextDecoder();
       let closed = false;
+      let capturedSessionId: string | undefined;
 
       function emit(data: string) {
         if (!closed) {
@@ -67,6 +73,17 @@ export async function POST(req: NextRequest) {
           if (done) break;
 
           const text = decoder.decode(value, { stream: true });
+
+          // Capture session_id from init event
+          if (text.includes('"subtype":"init"')) {
+            try {
+              const initMatch = text.match(/^data: (.+)$/m);
+              if (initMatch) {
+                const initParsed = JSON.parse(initMatch[1]);
+                if (initParsed.session_id) capturedSessionId = initParsed.session_id;
+              }
+            } catch {}
+          }
 
           // Check if this chunk contains the "done" event
           if (text.includes('"type":"done"')) {
@@ -96,6 +113,14 @@ export async function POST(req: NextRequest) {
                     parsed.previewUrl = `/api/preview/${dirName}/`;
                     parsed.isVite = false;
                   }
+
+                  // Save project record
+                  try {
+                    const result = db.prepare(
+                      "INSERT INTO projects (name, site_dir, provider, framework, session_id, github_repo) VALUES (?, ?, ?, ?, ?, ?)"
+                    ).run(projectName, dirName, "claude", framework, capturedSessionId || null, settings.github_repo || null);
+                    parsed.projectId = result.lastInsertRowid;
+                  } catch {}
 
                   emit(JSON.stringify(parsed));
                   close();
