@@ -13,8 +13,8 @@ type SidebarTab = 'setup' | 'chat' | 'inspector'
 interface SidebarProps {
   selectedNode: CanvasNode | null
   provider: string
-  onSiteReady: (siteDir: string, sessionId?: string, provider?: string, previewUrl?: string, isVite?: boolean) => void
-  onFileChange: () => void
+  onPrepareBrief: (userPrompt: string) => void
+  preparing: boolean
   collapsed: boolean
   onToggleCollapse: () => void
   onUpdateNode?: (updates: Partial<CanvasNode>) => void
@@ -25,7 +25,7 @@ interface SidebarProps {
   onEditInChat?: () => void
 }
 
-export default function Sidebar({ selectedNode, provider, onSiteReady, onFileChange, collapsed, onToggleCollapse, onUpdateNode, onUpdateNodeData, onDeleteNode, onBringToFront, onSendToBack, onEditInChat }: SidebarProps) {
+export default function Sidebar({ selectedNode, provider, onPrepareBrief, preparing, collapsed, onToggleCollapse, onUpdateNode, onUpdateNodeData, onDeleteNode, onBringToFront, onSendToBack, onEditInChat }: SidebarProps) {
   const [activeTab, setActiveTab] = useState<SidebarTab>('setup')
 
   if (collapsed) {
@@ -59,7 +59,7 @@ export default function Sidebar({ selectedNode, provider, onSiteReady, onFileCha
             <PinBoard />
             <GitHubPanel />
             <PresetsPanel />
-            <GeneratePanel provider={provider} onSiteReady={onSiteReady} onFileChange={onFileChange} />
+            <GeneratePanel provider={provider} preparing={preparing} onPrepareBrief={onPrepareBrief} />
           </div>
         )}
 

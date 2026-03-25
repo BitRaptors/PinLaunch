@@ -17,6 +17,7 @@ interface Project {
 interface ProjectsDropdownProps {
   onSelectProject: (project: Project) => void;
   onNewProject: () => void;
+  onDeleteProject?: (siteDir: string) => void;
 }
 
 function timeAgo(dateStr: string): string {
@@ -34,7 +35,7 @@ function timeAgo(dateStr: string): string {
   return `${diffWeek}w ago`;
 }
 
-export default function ProjectsDropdown({ onSelectProject, onNewProject }: ProjectsDropdownProps) {
+export default function ProjectsDropdown({ onSelectProject, onNewProject, onDeleteProject }: ProjectsDropdownProps) {
   const [open, setOpen] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -78,12 +79,14 @@ export default function ProjectsDropdown({ onSelectProject, onNewProject }: Proj
   };
 
   const handleDelete = async (id: number) => {
+    const project = projects.find((p) => p.id === id);
     await fetch("/api/projects", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
     });
     setProjects((prev) => prev.filter((p) => p.id !== id));
+    if (project) onDeleteProject?.(project.site_dir);
   };
 
   return (

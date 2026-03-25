@@ -1,14 +1,21 @@
 import { getDb } from "@/lib/db";
-import { streamClaudeGeneration, getActiveFramework } from "@/lib/generate";
+import { streamClaudeGeneration, streamClaudeWithPrompt, getActiveFramework, buildBuilderPrompt } from "@/lib/generate";
 import { getRepoContent } from "@/lib/github";
 import { startViteServer, detectViteProject } from "@/lib/vite-server";
+import { saveBrief } from "@/lib/brief";
+import type { Brief } from "@/lib/brief";
 import { NextRequest } from "next/server";
 import path from "path";
 
 export async function POST(req: NextRequest) {
   let userPrompt: string;
+  let brief: Brief | undefined;
+  let existingSiteDir: string | undefined;
   try {
-    ({ userPrompt } = await req.json());
+    const body = await req.json();
+    userPrompt = body.userPrompt || "";
+    brief = body.brief;
+    existingSiteDir = body.siteDir; // when building from a brief, reuse the same siteDir
   } catch {
     return new Response(JSON.stringify({ error: "Invalid request body" }), {
       status: 400,
@@ -26,14 +33,14 @@ export async function POST(req: NextRequest) {
   for (const row of settingsRows) settings[row.key] = row.value;
 
   let repoContent = null;
-  if (settings.github_repo) {
+  if (!brief && settings.github_repo) {
     try {
       repoContent = await getRepoContent(settings.github_token || null, settings.github_repo);
     } catch {}
   }
 
-  const input = { pins, repoContent, userPrompt: userPrompt || "", presets: activePresets };
-  const dirName = `site-${Date.now()}`;
+  const input = { pins, repoContent, userPrompt, presets: activePresets };
+  const dirName = existingSiteDir || `site-${Date.now()}`;
   const outputDir = path.join(process.cwd(), "output", dirName);
 
   const framework = getActiveFramework(activePresets);
@@ -43,7 +50,10 @@ export async function POST(req: NextRequest) {
   const repoName = settings.github_repo?.split("/").pop() || null;
   const projectName = repoName ? `${repoName} Landing Page` : `Project ${new Date().toLocaleDateString()}`;
 
-  const claudeStream = streamClaudeGeneration(input, outputDir);
+  // If a brief is provided, use the Builder prompt instead of the full generation prompt
+  const claudeStream = brief
+    ? streamClaudeWithPrompt(buildBuilderPrompt(brief, framework || "HTML + Tailwind", outputDir), outputDir)
+    : streamClaudeGeneration(input, outputDir);
   const encoder = new TextEncoder();
 
   // Wrap Claude stream: intercept "done" event, optionally append Vite setup phase

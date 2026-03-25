@@ -1,12 +1,12 @@
 import { getDb } from "@/lib/db";
-import { generateWithGemini, generateWithClaude, writeGeneratedSite, getActiveFramework } from "@/lib/generate";
+import { generateWithGemini, generateWithClaude, writeGeneratedSite, getActiveFramework, buildBuilderPrompt } from "@/lib/generate";
 import { getRepoContent } from "@/lib/github";
 import { detectViteProject } from "@/lib/vite-server";
 import { NextRequest, NextResponse } from "next/server";
 import path from "path";
 
 export async function POST(req: NextRequest) {
-  const { userPrompt, provider } = await req.json();
+  const { userPrompt, provider, brief, siteDir: existingSiteDir } = await req.json();
   const db = getDb();
 
   const pins = db.prepare("SELECT url, title, description, thumbnail FROM pins").all() as any[];
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
 
   const input = { pins, repoContent, userPrompt: userPrompt || "", presets: activePresets };
 
-  const dirName = `site-${Date.now()}`;
+  const dirName = existingSiteDir || `site-${Date.now()}`;
   const outputDir = path.join(process.cwd(), "output", dirName);
 
   let files: Record<string, string>;

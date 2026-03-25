@@ -4,6 +4,7 @@ import { promisify } from "util";
 import fs from "fs";
 import path from "path";
 import prompts from "./prompts.json";
+import type { Brief } from "./brief";
 
 const execFileAsync = promisify(execFile);
 
@@ -393,6 +394,11 @@ function parseGeneratedFiles(text: string): Record<string, string> {
   return { "index.html": text };
 }
 
+export function streamClaudeWithPrompt(prompt: string, outputDir: string): ReadableStream<Uint8Array> {
+  fs.mkdirSync(outputDir, { recursive: true });
+  return _streamClaude(prompt, outputDir);
+}
+
 export function streamClaudeGeneration(input: GenerateInput, outputDir: string): ReadableStream<Uint8Array> {
   fs.mkdirSync(outputDir, { recursive: true });
 
@@ -400,6 +406,10 @@ export function streamClaudeGeneration(input: GenerateInput, outputDir: string):
   copyPinScreenshotsToDir(input.pins, outputDir);
 
   const claudePrompt = buildClaudePrompt(input, outputDir);
+  return _streamClaude(claudePrompt, outputDir);
+}
+
+function _streamClaude(claudePrompt: string, outputDir: string): ReadableStream<Uint8Array> {
   const localClaude = path.join(process.cwd(), "node_modules", ".bin", "claude");
   const claudeBin = fs.existsSync(localClaude) ? localClaude : "claude";
 
@@ -594,6 +604,50 @@ export function streamClaudeRefinement(
       try { proc?.kill(); } catch {}
     },
   });
+}
+
+export function buildBuilderPrompt(brief: Brief, framework: string, outputDir?: string): string {
+  const sections: string[] = [];
+  const isVite = framework === "React (Vite)";
+
+  sections.push(
+    "# Role & Task\n" +
+    "You are an expert frontend developer. You are implementing a landing page from a creative brief.\n" +
+    "Follow the brief EXACTLY. Do not improvise copy, change colors, or alter the design direction.\n" +
+    "Output ONLY the code files — no explanation."
+  );
+
+  sections.push("# Creative Brief\n" + JSON.stringify(brief, null, 2));
+
+  sections.push(
+    "# Implementation Rules\n" +
+    "- Use the EXACT hex colors from the brief's color palette\n" +
+    "- Use the EXACT copy text (headlines, body, CTAs) — do not rewrite\n" +
+    "- Use the EXACT section order from the brief\n" +
+    "- Load the specified Google Fonts for headings and body\n" +
+    "- Follow the design notes for layout, spacing, and animations\n" +
+    "- Mobile-first responsive design (375px, 768px, 1280px breakpoints)\n" +
+    "- Semantic HTML5, WCAG AA contrast, smooth scroll navigation\n" +
+    "- Subtle CSS-only entrance animations (fade-in, slide-up)"
+  );
+
+  // Output format
+  if (isVite) {
+    sections.push(prompts.geminiOutputFormatVite);
+  } else {
+    sections.push(prompts.geminiOutputFormat);
+  }
+
+  const prompt = sections.join("\n\n");
+
+  // If outputDir provided, return Claude-formatted prompt
+  if (outputDir) {
+    const claudeFormat = isVite ? prompts.claudeOutputFormatVite : prompts.claudeOutputFormat;
+    const geminiFormat = isVite ? prompts.geminiOutputFormatVite : prompts.geminiOutputFormat;
+    return prompts.claudeSystemPrefix.replace("{{outputDir}}", outputDir) + prompt.replace(geminiFormat, claudeFormat);
+  }
+
+  return prompt;
 }
 
 export function writeGeneratedSite(files: Record<string, string>, outputDir: string) {

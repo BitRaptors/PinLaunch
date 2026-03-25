@@ -237,8 +237,8 @@ export default function CanvasPage() {
       <Sidebar
         selectedNode={selectedNode}
         provider={provider}
-        onSiteReady={handleSiteReady}
-        onFileChange={() => {}}
+        onPrepareBrief={(prompt) => { /* TODO: wire brief flow */ console.log('Prepare brief:', prompt) }}
+        preparing={false}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(prev => !prev)}
         onUpdateNode={handleUpdateNode}
