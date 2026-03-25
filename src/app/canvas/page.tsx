@@ -326,14 +326,6 @@ export default function CanvasPage() {
         onDragOver={(e) => e.preventDefault()}
         onDrop={handleFileDrop}
       >
-        <CanvasToolbar
-          onAddWebsite={handleAddWebsite}
-          onAddImage={handleAddImage}
-          onAddDocument={handleAddDocument}
-          onAddShape={handleAddShape}
-          onAddWidget={handleAddWidget}
-          onPromptSubmit={handlePromptSubmit}
-        />
         <Canvas
           panningDisabled={isDraggingNode}
           onTransformChange={(x, y, z) => { setViewportX(x); setViewportY(y); setZoom(z) }}
@@ -427,6 +419,14 @@ export default function CanvasPage() {
             />
           ))}
         </Canvas>
+        <CanvasToolbar
+          onAddWebsite={handleAddWebsite}
+          onAddImage={handleAddImage}
+          onAddDocument={handleAddDocument}
+          onAddShape={handleAddShape}
+          onAddWidget={handleAddWidget}
+          onPromptSubmit={handlePromptSubmit}
+        />
         <Minimap
           nodes={state.nodes}
           viewportX={viewportX}
