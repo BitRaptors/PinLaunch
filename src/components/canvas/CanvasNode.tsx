@@ -12,6 +12,7 @@ interface CanvasNodeProps {
   node: CanvasNodeType
   selected: boolean
   zoom: number
+  externalDragOffset?: { dx: number; dy: number } | null
   onSelect: (id: string, shiftKey: boolean) => void
   onMove: (id: string, x: number, y: number) => void
   onResize?: (id: string, width: number, height: number, x: number, y: number) => void
@@ -20,11 +21,12 @@ interface CanvasNodeProps {
   onEditInChat?: (id: string) => void
   onContextMenu?: (id: string, x: number, y: number) => void
   onDragStateChange?: (isDragging: boolean) => void
+  onDragOffsetChange?: (dx: number, dy: number) => void
 }
 
 type Corner = 'nw' | 'ne' | 'sw' | 'se'
 
-export default function CanvasNodeComponent({ node, selected, zoom, onSelect, onMove, onResize, onUpdateData, onToggleExclude, onEditInChat, onContextMenu, onDragStateChange }: CanvasNodeProps) {
+export default function CanvasNodeComponent({ node, selected, zoom, externalDragOffset, onSelect, onMove, onResize, onUpdateData, onToggleExclude, onEditInChat, onContextMenu, onDragStateChange, onDragOffsetChange }: CanvasNodeProps) {
   // --- Drag state ---
   const dragRef = useRef<{ startX: number; startY: number; nodeX: number; nodeY: number; currentDx: number; currentDy: number; moved: boolean } | null>(null)
   const [dragging, setDragging] = useState(false)
@@ -47,6 +49,8 @@ export default function CanvasNodeComponent({ node, selected, zoom, onSelect, on
   onResizeRef.current = onResize
   const onDragStateChangeRef = useRef(onDragStateChange)
   onDragStateChangeRef.current = onDragStateChange
+  const onDragOffsetChangeRef = useRef(onDragOffsetChange)
+  onDragOffsetChangeRef.current = onDragOffsetChange
 
   // --- Drag handlers ---
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -71,6 +75,7 @@ export default function CanvasNodeComponent({ node, selected, zoom, onSelect, on
       dragRef.current.currentDx = dx
       dragRef.current.currentDy = dy
       setDragOffset({ dx, dy })
+      onDragOffsetChangeRef.current?.(dx, dy)
     }
 
     const onMouseUp = () => {
@@ -80,6 +85,7 @@ export default function CanvasNodeComponent({ node, selected, zoom, onSelect, on
       dragRef.current = null
       setDragging(false)
       setDragOffset(null)
+      onDragOffsetChangeRef.current?.(0, 0)
       onDragStateChangeRef.current?.(false)
       window.removeEventListener('mousemove', onMouseMove)
       window.removeEventListener('mouseup', onMouseUp)
@@ -189,8 +195,10 @@ export default function CanvasNodeComponent({ node, selected, zoom, onSelect, on
   }, [node.id, node.x, node.y, node.width, node.height, zoom])
 
   // --- Visual position/size ---
-  const visualX = dragOffset ? node.x + dragOffset.dx : (resizeOffset ? node.x + resizeOffset.dx : node.x)
-  const visualY = dragOffset ? node.y + dragOffset.dy : (resizeOffset ? node.y + resizeOffset.dy : node.y)
+  const extDx = externalDragOffset?.dx ?? 0
+  const extDy = externalDragOffset?.dy ?? 0
+  const visualX = dragOffset ? node.x + dragOffset.dx : (resizeOffset ? node.x + resizeOffset.dx : node.x + extDx)
+  const visualY = dragOffset ? node.y + dragOffset.dy : (resizeOffset ? node.y + resizeOffset.dy : node.y + extDy)
   const visualW = resizeOffset ? Math.max(30, node.width + resizeOffset.dw) : node.width
   const visualH = resizeOffset ? Math.max(30, node.height + resizeOffset.dh) : node.height
 

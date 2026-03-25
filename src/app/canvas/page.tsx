@@ -22,6 +22,7 @@ export default function CanvasPage() {
   const [provider, setProvider] = useState('claude')
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; nodeId: string } | null>(null)
   const [isDraggingNode, setIsDraggingNode] = useState(false)
+  const [multiDragOffset, setMultiDragOffset] = useState<{ dx: number; dy: number; sourceId: string } | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const undoMgr = useRef(createUndoRedoManager())
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -351,18 +352,20 @@ export default function CanvasPage() {
               node={node}
               selected={selectedIds.has(node.id)}
               zoom={zoom}
+              externalDragOffset={
+                multiDragOffset && multiDragOffset.sourceId !== node.id && selectedIds.has(node.id)
+                  ? { dx: multiDragOffset.dx, dy: multiDragOffset.dy }
+                  : null
+              }
               onSelect={(id, shift) => {
                 setSelectedIds(prev => {
                   if (shift) {
-                    // Toggle in multi-select
                     const next = new Set(prev)
                     if (next.has(id)) next.delete(id)
                     else next.add(id)
                     return next
                   }
-                  // If already selected (part of multi-selection), keep all selected for drag
                   if (prev.has(id)) return prev
-                  // Otherwise single-select
                   return new Set([id])
                 })
               }}
@@ -381,6 +384,16 @@ export default function CanvasPage() {
                   pushState(s)
                 } else {
                   pushState(moveNode(state, id, deltaX, deltaY))
+                }
+                setMultiDragOffset(null)
+              }}
+              onDragOffsetChange={(dx, dy) => {
+                if (selectedIds.size > 1 && selectedIds.has(node.id)) {
+                  if (dx === 0 && dy === 0) {
+                    setMultiDragOffset(null)
+                  } else {
+                    setMultiDragOffset({ dx, dy, sourceId: node.id })
+                  }
                 }
               }}
               onResize={(id, width, height, x, y) => {
