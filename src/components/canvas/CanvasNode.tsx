@@ -6,6 +6,7 @@ import ShapeNode from './ShapeNode'
 import WidgetNode from './WidgetNode'
 import ImageNode from './ImageNode'
 import DocumentNode from './DocumentNode'
+import ArtboardNode from './ArtboardNode'
 
 interface CanvasNodeProps {
   node: CanvasNodeType
@@ -60,15 +61,17 @@ export default function CanvasNodeComponent({ node, selected, zoom, onSelect, on
       case 'document':
         return <DocumentNode width={node.width} height={node.height} data={node.data as any} selected={selected} onMouseDown={handleMouseDown} onUpdateData={(newData) => onUpdateData?.(newData)} />
       case 'artboard':
-        // Placeholder — will be replaced in Task 6
         return (
-          <div
-            style={{ width: node.width, height: node.height, outline: selected ? '2px solid #3b82f6' : '1px dashed var(--border)', outlineOffset: '2px' }}
-            className="flex items-center justify-center text-sm opacity-50 cursor-move"
+          <ArtboardNode
+            width={node.width}
+            height={node.height}
+            data={node.data as any}
+            selected={selected}
+            isVisible={true}
             onMouseDown={handleMouseDown}
-          >
-            {node.type} (coming soon)
-          </div>
+            onToggleExclude={() => onToggleExclude?.(node.id)}
+            onEditInChat={() => onEditInChat?.(node.id)}
+          />
         )
       default:
         return null
