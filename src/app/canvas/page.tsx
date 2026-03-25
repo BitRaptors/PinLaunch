@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Canvas from '@/components/canvas/Canvas'
+import CanvasNodeComponent from '@/components/canvas/CanvasNode'
 import { CanvasState, CanvasNode, createEmptyState } from '@/lib/canvas-types'
 import { addNode, removeNode, updateNode, moveNode, bringToFront, sendToBack, createUndoRedoManager } from '@/lib/canvas-state'
 
@@ -9,6 +10,7 @@ export default function CanvasPage() {
   const [state, setState] = useState<CanvasState>(createEmptyState())
   const [projectId, setProjectId] = useState<number | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [zoom, setZoom] = useState(1)
   const undoMgr = useRef(createUndoRedoManager())
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -86,13 +88,32 @@ export default function CanvasPage() {
         <div className="p-4 text-sm opacity-50">Sidebar — coming soon</div>
       </div>
       <div className="flex-1 relative">
-        <Canvas>
+        <Canvas onTransformChange={(_x, _y, z) => setZoom(z)}>
           {state.nodes.length === 0 && (
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center opacity-50">
               <p className="text-lg mb-2">Start by adding pins and generating your first page in the Setup tab</p>
               <p className="text-sm">← Use the sidebar to get started</p>
             </div>
           )}
+          {state.nodes.map(node => (
+            <CanvasNodeComponent
+              key={node.id}
+              node={node}
+              selected={selectedIds.has(node.id)}
+              zoom={zoom}
+              onSelect={(id, shift) => {
+                setSelectedIds(prev => {
+                  const next = new Set(shift ? prev : [])
+                  if (next.has(id)) next.delete(id)
+                  else next.add(id)
+                  return next
+                })
+              }}
+              onMove={(id, x, y) => {
+                pushState(moveNode(state, id, x, y))
+              }}
+            />
+          ))}
         </Canvas>
       </div>
     </div>
