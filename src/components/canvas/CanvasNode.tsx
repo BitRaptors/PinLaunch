@@ -238,7 +238,7 @@ export default function CanvasNodeComponent({ node, selected, zoom, externalDrag
   }, [node.id, onContextMenu])
 
   // Fixed screen-size handles regardless of zoom level
-  const handleScreenSize = 12
+  const handleScreenSize = 8
   const handleSize = handleScreenSize / zoom
   const handleOffset = handleSize / 2 + 2 / zoom
   const handleStyle = (cursor: string): React.CSSProperties => ({
