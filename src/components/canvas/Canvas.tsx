@@ -79,7 +79,14 @@ export default function Canvas({ children, panningDisabled, onTransformChange, o
     }
 
     const onMouseUp = () => {
-      // Final selection already applied via live updates
+      // If no meaningful drag happened (just a click), deselect all
+      if (lassoRef.current) {
+        const dx = Math.abs(lassoRef.current.currentX - lassoRef.current.startX)
+        const dy = Math.abs(lassoRef.current.currentY - lassoRef.current.startY)
+        if (dx < 3 && dy < 3) {
+          onLassoUpdateRef.current?.(null)
+        }
+      }
       lassoRef.current = null
       setLasso(null)
       cleanup()
