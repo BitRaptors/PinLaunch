@@ -13,7 +13,7 @@ interface ImageNodeProps {
 
 export default function ImageNode({ width, height, data, selected, onMouseDown }: ImageNodeProps) {
   const [error, setError] = useState(false)
-  const src = data.src.startsWith('http') ? data.src : `/api/uploads/${data.src.replace('uploads/', '')}`
+  const src = data.src.startsWith('http') ? data.src : `/api/uploads/${data.src.split('/').pop() || data.src}`
 
   return (
     <div

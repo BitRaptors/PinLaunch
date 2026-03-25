@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import type { ArtboardNodeData } from '@/lib/canvas-types'
 
 interface ArtboardNodeProps {
@@ -17,7 +17,10 @@ interface ArtboardNodeProps {
 export default function ArtboardNode({ width, height, data, selected, isVisible, onMouseDown, onToggleExclude, onEditInChat }: ArtboardNodeProps) {
   const [interactive, setInteractive] = useState(false)
 
-  const previewUrl = `/api/preview/${data.siteDir}/?t=${Date.now()}`
+  const previewUrl = useMemo(
+    () => `/api/preview/${data.siteDir}/?t=${Date.now()}`,
+    [data.siteDir]
+  )
 
   const handleDoubleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()

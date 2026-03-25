@@ -138,7 +138,7 @@ export default function CanvasPage() {
     const formData = new FormData()
     formData.append('file', file)
     const res = await fetch('/api/uploads', { method: 'POST', body: formData })
-    const { url } = await res.json()
+    const { path } = await res.json()
     const node: CanvasNode = {
       id: crypto.randomUUID(),
       type: 'image',
@@ -147,7 +147,7 @@ export default function CanvasPage() {
       width: 300,
       height: 200,
       zIndex: state.nodes.length,
-      data: { src: url, alt: file.name },
+      data: { src: path, alt: file.name },
     }
     pushState(addNode(state, node))
   }, [state, pushState])
