@@ -10,7 +10,7 @@ export default function CanvasPage() {
   const [projectId, setProjectId] = useState<number | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const undoMgr = useRef(createUndoRedoManager())
-  const saveTimer = useRef<ReturnType<typeof setTimeout>>()
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     fetch('/api/canvas')
