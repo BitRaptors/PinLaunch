@@ -50,3 +50,5 @@ public/thumbnails/
 
 .archie/scan.json
 .archie/stats.jsonl
+.worktrees/
+.superpowers/
