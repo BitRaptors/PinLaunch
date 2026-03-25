@@ -18,7 +18,7 @@ export default function Header({ onSelectProject, onNewProject, onDeleteProject,
     <>
       <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-[var(--bg)]/90 backdrop-blur-xl backdrop-saturate-150">
         <div className="mx-auto flex max-w-[1800px] items-center justify-between px-5 py-3">
-          <div className="flex items-center gap-2.5">
+          <a href="/canvas" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
             {/* Logo mark */}
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent)]">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="white" className="drop-shadow-sm">
@@ -28,7 +28,7 @@ export default function Header({ onSelectProject, onNewProject, onDeleteProject,
             <h1 className="text-lg font-bold tracking-tight">
               <span className="text-[var(--accent)]">Pin</span><span className="text-[var(--text)]">Launch</span>
             </h1>
-          </div>
+          </a>
 
           <div className="flex items-center gap-2">
             {onSelectProject && onNewProject && (
