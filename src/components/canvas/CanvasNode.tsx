@@ -4,6 +4,8 @@ import { useCallback, useRef, useState } from 'react'
 import type { CanvasNode as CanvasNodeType } from '@/lib/canvas-types'
 import ShapeNode from './ShapeNode'
 import WidgetNode from './WidgetNode'
+import ImageNode from './ImageNode'
+import DocumentNode from './DocumentNode'
 
 interface CanvasNodeProps {
   node: CanvasNodeType
@@ -54,9 +56,11 @@ export default function CanvasNodeComponent({ node, selected, zoom, onSelect, on
       case 'widget':
         return <WidgetNode width={node.width} height={node.height} data={node.data as any} selected={selected} onMouseDown={handleMouseDown} />
       case 'image':
+        return <ImageNode width={node.width} height={node.height} data={node.data as any} selected={selected} onMouseDown={handleMouseDown} />
       case 'document':
+        return <DocumentNode width={node.width} height={node.height} data={node.data as any} selected={selected} onMouseDown={handleMouseDown} onUpdateData={(newData) => onUpdateData?.(newData)} />
       case 'artboard':
-        // Placeholder — will be replaced in Tasks 5-6
+        // Placeholder — will be replaced in Task 6
         return (
           <div
             style={{ width: node.width, height: node.height, outline: selected ? '2px solid #3b82f6' : '1px dashed var(--border)', outlineOffset: '2px' }}
