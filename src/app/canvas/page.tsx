@@ -276,10 +276,28 @@ export default function CanvasPage() {
       <Sidebar
         selectedNode={selectedNode}
         provider={provider}
-        onPrepareBrief={(prompt) => { /* TODO: wire brief flow */ console.log('Prepare brief:', prompt) }}
-        preparing={false}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(prev => !prev)}
+        onArtboardReady={(siteDir, sessionId, prov) => {
+          const viewport = 'desktop' as const
+          const { width, height } = VIEWPORT_SIZES[viewport]
+          const node: CanvasNode = {
+            id: crypto.randomUUID(),
+            type: 'artboard',
+            x: state.nodes.length * 200,
+            y: 100,
+            width, height,
+            zIndex: 0,
+            data: {
+              name: siteDir.replace('site-', ''),
+              siteDir,
+              viewport,
+              provider: (prov || 'claude') as 'gemini' | 'claude',
+              sessionId,
+            },
+          }
+          pushState(addNode(state, node))
+        }}
         onUpdateNode={handleUpdateNode}
         onUpdateNodeData={handleUpdateNodeData}
         onDeleteNode={handleDeleteNode}
