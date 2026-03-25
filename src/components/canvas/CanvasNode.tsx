@@ -17,9 +17,10 @@ interface CanvasNodeProps {
   onUpdateData?: (data: any) => void
   onToggleExclude?: (id: string) => void
   onEditInChat?: (id: string) => void
+  onContextMenu?: (id: string, x: number, y: number) => void
 }
 
-export default function CanvasNodeComponent({ node, selected, zoom, onSelect, onMove, onUpdateData, onToggleExclude, onEditInChat }: CanvasNodeProps) {
+export default function CanvasNodeComponent({ node, selected, zoom, onSelect, onMove, onUpdateData, onToggleExclude, onEditInChat, onContextMenu }: CanvasNodeProps) {
   const dragRef = useRef<{ startX: number; startY: number; nodeX: number; nodeY: number } | null>(null)
   const [dragging, setDragging] = useState(false)
 
@@ -78,6 +79,11 @@ export default function CanvasNodeComponent({ node, selected, zoom, onSelect, on
     }
   }
 
+  const handleContextMenu = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    onContextMenu?.(node.id, e.clientX, e.clientY)
+  }, [node.id, onContextMenu])
+
   return (
     <div
       className="absolute"
@@ -87,6 +93,7 @@ export default function CanvasNodeComponent({ node, selected, zoom, onSelect, on
         zIndex: node.zIndex,
         cursor: dragging ? 'grabbing' : undefined,
       }}
+      onContextMenu={handleContextMenu}
     >
       {renderContent()}
     </div>
