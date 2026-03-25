@@ -7,15 +7,20 @@ interface CanvasProps {
   children: ReactNode
   panningDisabled?: boolean
   onTransformChange?: (x: number, y: number, zoom: number) => void
-  onLassoSelect?: (rect: { x: number; y: number; width: number; height: number }) => void
+  onLassoUpdate?: (rect: { x: number; y: number; width: number; height: number } | null) => void
 }
 
-export default function Canvas({ children, panningDisabled, onTransformChange, onLassoSelect }: CanvasProps) {
+export default function Canvas({ children, panningDisabled, onTransformChange, onLassoUpdate }: CanvasProps) {
   const transformRef = useRef<ReactZoomPanPinchRef>(null)
   const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 })
   const [lasso, setLasso] = useState<{ startX: number; startY: number; currentX: number; currentY: number } | null>(null)
   const lassoRef = useRef<{ startX: number; startY: number; currentX: number; currentY: number } | null>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
+  const cleanupRef = useRef<(() => void) | null>(null)
+  const transformRef2 = useRef(transform)
+  transformRef2.current = transform
+  const onLassoUpdateRef = useRef(onLassoUpdate)
+  onLassoUpdateRef.current = onLassoUpdate
 
   const handleTransform = useCallback((_: unknown, state: { positionX: number; positionY: number; scale: number }) => {
     setTransform({ x: state.positionX, y: state.positionY, scale: state.scale })
@@ -26,16 +31,31 @@ export default function Canvas({ children, panningDisabled, onTransformChange, o
   const gridOffsetX = transform.x % gridSize
   const gridOffsetY = transform.y % gridSize
 
-  // Lasso selection: mousedown on empty canvas area starts the lasso
+  // Convert screen lasso coords to world rect
+  const screenToWorldRect = useCallback((l: { startX: number; startY: number; currentX: number; currentY: number }) => {
+    const containerRect = wrapperRef.current?.getBoundingClientRect()
+    if (!containerRect) return null
+    const t = transformRef2.current
+    const x1 = (Math.min(l.startX, l.currentX) - containerRect.left - t.x) / t.scale
+    const y1 = (Math.min(l.startY, l.currentY) - containerRect.top - t.y) / t.scale
+    const x2 = (Math.max(l.startX, l.currentX) - containerRect.left - t.x) / t.scale
+    const y2 = (Math.max(l.startY, l.currentY) - containerRect.top - t.y) / t.scale
+    return { x: x1, y: y1, width: x2 - x1, height: y2 - y1 }
+  }, [])
+
+  // Cancel lasso (called on Escape)
+  const cancelLasso = useCallback(() => {
+    if (cleanupRef.current) cleanupRef.current()
+    lassoRef.current = null
+    setLasso(null)
+    onLassoUpdateRef.current?.(null)
+  }, [])
+
+  // Lasso selection: mousedown on empty canvas area
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    // Only start lasso on left click directly on the canvas content area
     if (e.button !== 0) return
-    // Check if the click target is the large content div (empty area)
     const target = e.target as HTMLElement
     if (target.closest('.canvas-node')) return
-
-    const rect = wrapperRef.current?.getBoundingClientRect()
-    if (!rect) return
 
     const screenX = e.clientX
     const screenY = e.clientY
@@ -43,39 +63,49 @@ export default function Canvas({ children, panningDisabled, onTransformChange, o
     lassoRef.current = { startX: screenX, startY: screenY, currentX: screenX, currentY: screenY }
     setLasso({ startX: screenX, startY: screenY, currentX: screenX, currentY: screenY })
 
-    const handleMouseMove = (e: MouseEvent) => {
+    const onMouseMove = (e: MouseEvent) => {
       if (!lassoRef.current) return
       lassoRef.current.currentX = e.clientX
       lassoRef.current.currentY = e.clientY
       setLasso({ ...lassoRef.current })
+
+      // Live update selection
+      const worldRect = screenToWorldRect(lassoRef.current)
+      if (worldRect && (worldRect.width > 3 || worldRect.height > 3)) {
+        onLassoUpdateRef.current?.(worldRect)
+      } else {
+        onLassoUpdateRef.current?.(null)
+      }
     }
 
-    const handleMouseUp = () => {
-      if (lassoRef.current && onLassoSelect) {
-        const l = lassoRef.current
-        const containerRect = wrapperRef.current?.getBoundingClientRect()
-        if (containerRect) {
-          // Convert screen coords to world coords
-          const x1 = (Math.min(l.startX, l.currentX) - containerRect.left - transform.x) / transform.scale
-          const y1 = (Math.min(l.startY, l.currentY) - containerRect.top - transform.y) / transform.scale
-          const x2 = (Math.max(l.startX, l.currentX) - containerRect.left - transform.x) / transform.scale
-          const y2 = (Math.max(l.startY, l.currentY) - containerRect.top - transform.y) / transform.scale
-          const width = x2 - x1
-          const height = y2 - y1
-          if (width > 5 || height > 5) {
-            onLassoSelect({ x: x1, y: y1, width, height })
-          }
-        }
-      }
+    const onMouseUp = () => {
+      // Final selection already applied via live updates
       lassoRef.current = null
       setLasso(null)
-      window.removeEventListener('mousemove', handleMouseMove)
-      window.removeEventListener('mouseup', handleMouseUp)
+      cleanup()
     }
 
-    window.addEventListener('mousemove', handleMouseMove)
-    window.addEventListener('mouseup', handleMouseUp)
-  }, [transform, onLassoSelect])
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        lassoRef.current = null
+        setLasso(null)
+        onLassoUpdateRef.current?.(null)
+        cleanup()
+      }
+    }
+
+    const cleanup = () => {
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mouseup', onMouseUp)
+      window.removeEventListener('keydown', onKeyDown)
+      cleanupRef.current = null
+    }
+
+    cleanupRef.current = cleanup
+    window.addEventListener('mousemove', onMouseMove)
+    window.addEventListener('mouseup', onMouseUp)
+    window.addEventListener('keydown', onKeyDown)
+  }, [screenToWorldRect])
 
   // Custom wheel handler: two-finger scroll → pan, pinch (ctrlKey) → zoom
   useEffect(() => {
@@ -91,18 +121,15 @@ export default function Canvas({ children, panningDisabled, onTransformChange, o
       if (!ts) return
 
       if (e.ctrlKey || e.metaKey) {
-        // Pinch zoom gesture (trackpad pinch sends ctrlKey + deltaY)
+        // Pinch zoom gesture
         const zoomFactor = Math.exp(-e.deltaY * 0.01)
         const newScale = Math.min(4, Math.max(0.1, ts.scale * zoomFactor))
-
-        // Zoom toward cursor position
         const rect = el.getBoundingClientRect()
         const cursorX = e.clientX - rect.left
         const cursorY = e.clientY - rect.top
         const ratio = newScale / ts.scale
         const newX = cursorX - (cursorX - ts.positionX) * ratio
         const newY = cursorY - (cursorY - ts.positionY) * ratio
-
         api.setTransform(newX, newY, newScale, 0)
       } else {
         // Two-finger scroll → pan

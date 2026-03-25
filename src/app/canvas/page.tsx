@@ -320,10 +320,13 @@ export default function CanvasPage() {
         <Canvas
           panningDisabled={isDraggingNode}
           onTransformChange={(x, y, z) => { setViewportX(x); setViewportY(y); setZoom(z) }}
-          onLassoSelect={(rect) => {
+          onLassoUpdate={(rect) => {
+            if (!rect) {
+              setSelectedIds(new Set())
+              return
+            }
             const ids = new Set<string>()
             for (const node of state.nodes) {
-              // Check if node bbox intersects with lasso rect
               if (
                 node.x < rect.x + rect.width &&
                 node.x + node.width > rect.x &&
@@ -350,14 +353,35 @@ export default function CanvasPage() {
               zoom={zoom}
               onSelect={(id, shift) => {
                 setSelectedIds(prev => {
-                  const next = new Set(shift ? prev : [])
-                  if (next.has(id)) next.delete(id)
-                  else next.add(id)
-                  return next
+                  if (shift) {
+                    // Toggle in multi-select
+                    const next = new Set(prev)
+                    if (next.has(id)) next.delete(id)
+                    else next.add(id)
+                    return next
+                  }
+                  // If already selected (part of multi-selection), keep all selected for drag
+                  if (prev.has(id)) return prev
+                  // Otherwise single-select
+                  return new Set([id])
                 })
               }}
-              onMove={(id, x, y) => {
-                pushState(moveNode(state, id, x, y))
+              onMove={(id, deltaX, deltaY) => {
+                // Move all selected nodes by the same delta
+                if (selectedIds.has(id) && selectedIds.size > 1) {
+                  const movedNode = state.nodes.find(n => n.id === id)
+                  if (!movedNode) return
+                  const dx = deltaX - movedNode.x
+                  const dy = deltaY - movedNode.y
+                  let s = state
+                  for (const selectedId of selectedIds) {
+                    const n = s.nodes.find(nd => nd.id === selectedId)
+                    if (n) s = moveNode(s, selectedId, n.x + dx, n.y + dy)
+                  }
+                  pushState(s)
+                } else {
+                  pushState(moveNode(state, id, deltaX, deltaY))
+                }
               }}
               onResize={(id, width, height, x, y) => {
                 pushState(updateNode(state, id, { width, height, x, y }))
