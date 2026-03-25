@@ -260,7 +260,25 @@ export default function CanvasPage() {
           onAddDocument={handleAddDocument}
           onAddImage={handleAddImage}
         />
-        <Canvas panningDisabled={isDraggingNode} onTransformChange={(x, y, z) => { setViewportX(x); setViewportY(y); setZoom(z) }}>
+        <Canvas
+          panningDisabled={isDraggingNode}
+          onTransformChange={(x, y, z) => { setViewportX(x); setViewportY(y); setZoom(z) }}
+          onLassoSelect={(rect) => {
+            const ids = new Set<string>()
+            for (const node of state.nodes) {
+              // Check if node bbox intersects with lasso rect
+              if (
+                node.x < rect.x + rect.width &&
+                node.x + node.width > rect.x &&
+                node.y < rect.y + rect.height &&
+                node.y + node.height > rect.y
+              ) {
+                ids.add(node.id)
+              }
+            }
+            setSelectedIds(ids)
+          }}
+        >
           {state.nodes.length === 0 && (
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center opacity-50">
               <p className="text-lg mb-2">Start by adding pins and generating your first page in the Setup tab</p>
