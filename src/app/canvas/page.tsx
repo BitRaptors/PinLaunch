@@ -20,6 +20,7 @@ export default function CanvasPage() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [provider, setProvider] = useState('gemini')
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; nodeId: string } | null>(null)
+  const [isDraggingNode, setIsDraggingNode] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const undoMgr = useRef(createUndoRedoManager())
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -259,7 +260,7 @@ export default function CanvasPage() {
           onAddDocument={handleAddDocument}
           onAddImage={handleAddImage}
         />
-        <Canvas onTransformChange={(x, y, z) => { setViewportX(x); setViewportY(y); setZoom(z) }}>
+        <Canvas panningDisabled={isDraggingNode} onTransformChange={(x, y, z) => { setViewportX(x); setViewportY(y); setZoom(z) }}>
           {state.nodes.length === 0 && (
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center opacity-50">
               <p className="text-lg mb-2">Start by adding pins and generating your first page in the Setup tab</p>
@@ -291,6 +292,7 @@ export default function CanvasPage() {
                 if (n) pushState(updateNode(state, id, { excludeFromExport: !n.excludeFromExport }))
               }}
               onContextMenu={handleContextMenu}
+              onDragStateChange={setIsDraggingNode}
             />
           ))}
         </Canvas>

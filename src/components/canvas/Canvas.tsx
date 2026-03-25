@@ -5,10 +5,11 @@ import { TransformWrapper, TransformComponent, ReactZoomPanPinchRef } from 'reac
 
 interface CanvasProps {
   children: ReactNode
+  panningDisabled?: boolean
   onTransformChange?: (x: number, y: number, zoom: number) => void
 }
 
-export default function Canvas({ children, onTransformChange }: CanvasProps) {
+export default function Canvas({ children, panningDisabled, onTransformChange }: CanvasProps) {
   const transformRef = useRef<ReactZoomPanPinchRef>(null)
   const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 })
 
@@ -39,7 +40,7 @@ export default function Canvas({ children, onTransformChange }: CanvasProps) {
         initialPositionX={0}
         initialPositionY={0}
         limitToBounds={false}
-        panning={{ velocityDisabled: true, excluded: ['canvas-node'] }}
+        panning={{ velocityDisabled: true, excluded: ['canvas-node'], disabled: panningDisabled }}
         onTransformed={handleTransform}
         doubleClick={{ disabled: true }}
       >

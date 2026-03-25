@@ -18,14 +18,17 @@ interface CanvasNodeProps {
   onToggleExclude?: (id: string) => void
   onEditInChat?: (id: string) => void
   onContextMenu?: (id: string, x: number, y: number) => void
+  onDragStateChange?: (isDragging: boolean) => void
 }
 
-export default function CanvasNodeComponent({ node, selected, zoom, onSelect, onMove, onUpdateData, onToggleExclude, onEditInChat, onContextMenu }: CanvasNodeProps) {
+export default function CanvasNodeComponent({ node, selected, zoom, onSelect, onMove, onUpdateData, onToggleExclude, onEditInChat, onContextMenu, onDragStateChange }: CanvasNodeProps) {
   const dragRef = useRef<{ startX: number; startY: number; nodeX: number; nodeY: number; currentDx: number; currentDy: number; moved: boolean } | null>(null)
   const [dragging, setDragging] = useState(false)
   const [dragOffset, setDragOffset] = useState<{ dx: number; dy: number } | null>(null)
   const onMoveRef = useRef(onMove)
   onMoveRef.current = onMove
+  const onDragStateChangeRef = useRef(onDragStateChange)
+  onDragStateChangeRef.current = onDragStateChange
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
@@ -39,6 +42,7 @@ export default function CanvasNodeComponent({ node, selected, zoom, onSelect, on
     }
     setDragging(true)
     setDragOffset(null)
+    onDragStateChangeRef.current?.(true)
 
     const handleMouseMove = (e: MouseEvent) => {
       if (!dragRef.current) return
@@ -59,6 +63,7 @@ export default function CanvasNodeComponent({ node, selected, zoom, onSelect, on
       dragRef.current = null
       setDragging(false)
       setDragOffset(null)
+      onDragStateChangeRef.current?.(false)
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('mouseup', handleMouseUp)
     }
