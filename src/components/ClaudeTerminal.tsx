@@ -14,6 +14,7 @@ interface TerminalEntry {
 interface ClaudeTerminalProps {
   userPrompt: string;
   streamUrl?: string; // defaults to /api/generate/stream
+  requestBody?: Record<string, any>; // override the POST body (merged with userPrompt)
   onComplete: (result: {
     previewUrl: string;
     fileCount: number;
@@ -24,6 +25,7 @@ interface ClaudeTerminalProps {
   }) => void;
   onError: (message: string) => void;
   onFileChange?: () => void;
+  onLogEntry?: (entry: { type: string; content: string; meta?: string }) => void;
 }
 
 function formatBytes(str: string): string {
@@ -51,7 +53,7 @@ const TOOL_ICONS: Record<string, string> = {
   Grep: "\uD83D\uDD0E",    // 🔎
 };
 
-export default function ClaudeTerminal({ userPrompt, streamUrl, onComplete, onError, onFileChange }: ClaudeTerminalProps) {
+export default function ClaudeTerminal({ userPrompt, streamUrl, requestBody, onComplete, onError, onFileChange, onLogEntry }: ClaudeTerminalProps) {
   const [entries, setEntries] = useState<TerminalEntry[]>([]);
   const [expanded, setExpanded] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -71,7 +73,7 @@ export default function ClaudeTerminal({ userPrompt, streamUrl, onComplete, onEr
         res = await fetch(streamUrl || "/api/generate/stream", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userPrompt }),
+          body: JSON.stringify(requestBody || { userPrompt }),
           signal: abortController.signal,
         });
       } catch (e: any) {
@@ -132,6 +134,7 @@ export default function ClaudeTerminal({ userPrompt, streamUrl, onComplete, onEr
 
   function addEntry(type: EntryType, content: string, meta?: string) {
     setEntries((prev) => [...prev, { id: ++idRef.current, type, content, meta }]);
+    onLogEntry?.({ type, content, meta });
   }
 
   function handleEvent(event: any) {

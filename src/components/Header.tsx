@@ -7,10 +7,11 @@ import ProjectsDropdown from "./ProjectsDropdown";
 interface HeaderProps {
   onSelectProject?: (project: any) => void;
   onNewProject?: () => void;
+  onDeleteProject?: (siteDir: string) => void;
   onSettingsChange?: (settings: Record<string, string>) => void;
 }
 
-export default function Header({ onSelectProject, onNewProject, onSettingsChange }: HeaderProps) {
+export default function Header({ onSelectProject, onNewProject, onDeleteProject, onSettingsChange }: HeaderProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   return (
@@ -31,7 +32,7 @@ export default function Header({ onSelectProject, onNewProject, onSettingsChange
 
           <div className="flex items-center gap-2">
             {onSelectProject && onNewProject && (
-              <ProjectsDropdown onSelectProject={onSelectProject} onNewProject={onNewProject} />
+              <ProjectsDropdown onSelectProject={onSelectProject} onNewProject={onNewProject} onDeleteProject={onDeleteProject} />
             )}
 
             <button
