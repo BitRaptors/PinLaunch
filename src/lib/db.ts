@@ -42,6 +42,12 @@ export function getDb(): Database.Database {
         created_at TEXT DEFAULT (datetime('now')),
         updated_at TEXT DEFAULT (datetime('now'))
       );
+      CREATE TABLE IF NOT EXISTS canvas_state (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        project_id INTEGER REFERENCES projects(id),
+        state TEXT NOT NULL DEFAULT '{"nodes":[],"viewport":{"x":0,"y":0,"zoom":1}}',
+        updated_at TEXT DEFAULT (datetime('now'))
+      );
     `);
     seedPresets(db);
   }
