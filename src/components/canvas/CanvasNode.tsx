@@ -109,6 +109,7 @@ export default function CanvasNodeComponent({ node, selected, zoom, onSelect, on
       const rawDx = (e.clientX - resizeRef.current.startX) / zoom
       const rawDy = (e.clientY - resizeRef.current.startY) / zoom
       const c = resizeRef.current.corner
+      const r = resizeRef.current
 
       let dx = 0, dy = 0, dw = 0, dh = 0
       if (c === 'se') { dw = rawDx; dh = rawDy }
@@ -116,16 +117,45 @@ export default function CanvasNodeComponent({ node, selected, zoom, onSelect, on
       else if (c === 'ne') { dw = rawDx; dy = rawDy; dh = -rawDy }
       else if (c === 'nw') { dx = rawDx; dy = rawDy; dw = -rawDx; dh = -rawDy }
 
+      // Shift = lock aspect ratio
+      if (e.shiftKey) {
+        const aspect = r.nodeW / r.nodeH
+        const newW = r.nodeW + dw
+        const newH = r.nodeH + dh
+        // Use the axis with larger relative change to drive both
+        if (Math.abs(dw / r.nodeW) > Math.abs(dh / r.nodeH)) {
+          dh = (newW / aspect) - r.nodeH
+          if (c === 'ne' || c === 'nw') dy = -(dh)
+        } else {
+          dw = (newH * aspect) - r.nodeW
+          if (c === 'sw' || c === 'nw') dx = -(dw)
+        }
+      }
+
+      // Alt = resize from center (expand both sides equally)
+      if (e.altKey) {
+        // Double the delta and shift position by negative half
+        const centerDw = dw * 2
+        const centerDh = dh * 2
+        dx = -(centerDw - dw + (c === 'sw' || c === 'nw' ? dw - dx : 0))
+        dy = -(centerDh - dh + (c === 'ne' || c === 'nw' ? dh - dy : 0))
+        // Simpler: for any corner, shift position by -dw and -dh, double size delta
+        dx = -dw
+        dy = -dh
+        dw = centerDw
+        dh = centerDh
+      }
+
       // Enforce minimum 30px
-      const newW = resizeRef.current.nodeW + dw
-      const newH = resizeRef.current.nodeH + dh
+      const newW = r.nodeW + dw
+      const newH = r.nodeH + dh
       if (newW < 30) {
-        const clampDw = 30 - resizeRef.current.nodeW
+        const clampDw = 30 - r.nodeW
         if (c === 'sw' || c === 'nw') dx = -(clampDw)
         dw = clampDw
       }
       if (newH < 30) {
-        const clampDh = 30 - resizeRef.current.nodeH
+        const clampDh = 30 - r.nodeH
         if (c === 'ne' || c === 'nw') dy = -(clampDh)
         dh = clampDh
       }
