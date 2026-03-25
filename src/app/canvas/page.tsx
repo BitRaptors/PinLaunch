@@ -23,6 +23,7 @@ export default function CanvasPage() {
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; nodeId: string } | null>(null)
   const [isDraggingNode, setIsDraggingNode] = useState(false)
   const [multiDragOffset, setMultiDragOffset] = useState<{ dx: number; dy: number; sourceId: string } | null>(null)
+  const [externalPrompt, setExternalPrompt] = useState<string | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const undoMgr = useRef(createUndoRedoManager())
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -100,6 +101,17 @@ export default function CanvasPage() {
     window.addEventListener('beforeunload', handler)
     return () => window.removeEventListener('beforeunload', handler)
   }, [projectId, state])
+
+  // Toolbar → Sidebar triggers
+  const handleAddWebsite = useCallback(() => {
+    if (sidebarCollapsed) setSidebarCollapsed(false)
+    setExternalPrompt('')
+  }, [sidebarCollapsed])
+
+  const handlePromptSubmit = useCallback((text: string) => {
+    if (sidebarCollapsed) setSidebarCollapsed(false)
+    setExternalPrompt(text)
+  }, [sidebarCollapsed])
 
   // Node creation handlers
   const handleAddShape = useCallback((shapeType: ShapeType, x: number, y: number) => {
@@ -305,6 +317,8 @@ export default function CanvasPage() {
         onBringToFront={handleBringToFront}
         onSendToBack={handleSendToBack}
         onEditInChat={undefined}
+        externalPrompt={externalPrompt}
+        onExternalPromptConsumed={() => setExternalPrompt(null)}
       />
       <div
         ref={containerRef}
@@ -313,10 +327,12 @@ export default function CanvasPage() {
         onDrop={handleFileDrop}
       >
         <CanvasToolbar
+          onAddWebsite={handleAddWebsite}
+          onAddImage={handleAddImage}
+          onAddDocument={handleAddDocument}
           onAddShape={handleAddShape}
           onAddWidget={handleAddWidget}
-          onAddDocument={handleAddDocument}
-          onAddImage={handleAddImage}
+          onPromptSubmit={handlePromptSubmit}
         />
         <Canvas
           panningDisabled={isDraggingNode}

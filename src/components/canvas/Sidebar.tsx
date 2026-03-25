@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import PinBoard from '@/components/PinBoard'
 import GitHubPanel from '@/components/GitHubPanel'
 import PresetsPanel from '@/components/PresetsPanel'
@@ -27,14 +27,30 @@ interface SidebarProps {
   onBringToFront?: () => void
   onSendToBack?: () => void
   onEditInChat?: () => void
+  externalPrompt?: string | null
+  onExternalPromptConsumed?: () => void
 }
 
-export default function Sidebar({ selectedNode, provider, collapsed, onToggleCollapse, onArtboardReady, onUpdateNode, onUpdateNodeData, onDeleteNode, onBringToFront, onSendToBack, onEditInChat }: SidebarProps) {
+export default function Sidebar({ selectedNode, provider, collapsed, onToggleCollapse, onArtboardReady, onUpdateNode, onUpdateNodeData, onDeleteNode, onBringToFront, onSendToBack, onEditInChat, externalPrompt, onExternalPromptConsumed }: SidebarProps) {
   const [activeTab, setActiveTab] = useState<SidebarTab>('setup')
   const [phase, setPhase] = useState<Phase>('idle')
   const [userPrompt, setUserPrompt] = useState('')
   const [brief, setBrief] = useState<Brief | null>(null)
   const [briefSiteDir, setBriefSiteDir] = useState<string | null>(null)
+
+  // Handle external prompt from toolbar
+  useEffect(() => {
+    if (externalPrompt === null || externalPrompt === undefined) return
+    setActiveTab('setup')
+    if (externalPrompt === '') {
+      // Just show the generate panel (empty = open setup)
+      setPhase('idle')
+    } else if (phase === 'idle') {
+      // Non-empty = start brief generation
+      handlePrepareBrief(externalPrompt)
+    }
+    onExternalPromptConsumed?.()
+  }, [externalPrompt])
 
   const handlePrepareBrief = useCallback((prompt: string) => {
     setUserPrompt(prompt)
