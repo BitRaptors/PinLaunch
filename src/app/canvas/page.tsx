@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import Canvas from '@/components/canvas/Canvas'
 import CanvasNodeComponent from '@/components/canvas/CanvasNode'
 import CanvasToolbar from '@/components/canvas/CanvasToolbar'
+import Minimap from '@/components/canvas/Minimap'
 import Sidebar from '@/components/canvas/Sidebar'
 import { CanvasState, CanvasNode, createEmptyState, VIEWPORT_SIZES } from '@/lib/canvas-types'
 import type { ShapeType, WidgetType } from '@/lib/canvas-types'
@@ -14,8 +15,12 @@ export default function CanvasPage() {
   const [projectId, setProjectId] = useState<number | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [zoom, setZoom] = useState(1)
+  const [viewportX, setViewportX] = useState(0)
+  const [viewportY, setViewportY] = useState(0)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [provider, setProvider] = useState('gemini')
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; nodeId: string } | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const undoMgr = useRef(createUndoRedoManager())
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -71,6 +76,7 @@ export default function CanvasPage() {
         setSelectedIds(new Set())
       } else if (e.key === 'Escape') {
         setSelectedIds(new Set())
+        setContextMenu(null)
       }
     }
     window.addEventListener('keydown', handler)
@@ -146,6 +152,26 @@ export default function CanvasPage() {
     pushState(addNode(state, node))
   }, [state, pushState])
 
+  // Task 11: Image drag-and-drop
+  const handleFileDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault()
+    const file = e.dataTransfer.files[0]
+    if (!file || !file.type.startsWith('image/')) return
+    const formData = new FormData()
+    formData.append('file', file)
+    const res = await fetch('/api/uploads', { method: 'POST', body: formData })
+    const { path } = await res.json()
+    const node: CanvasNode = {
+      id: crypto.randomUUID(),
+      type: 'image',
+      x: 200, y: 200,
+      width: 300, height: 200,
+      zIndex: 0,
+      data: { src: path },
+    }
+    pushState(addNode(state, node))
+  }, [state, pushState])
+
   const handleSiteReady = useCallback((siteDir: string, sessionId?: string, prov?: string) => {
     const viewport = 'desktop' as const
     const { width, height } = VIEWPORT_SIZES[viewport]
@@ -191,8 +217,22 @@ export default function CanvasPage() {
     pushState(sendToBack(state, selectedId))
   }, [state, selectedId, pushState])
 
+  // Task 12: Context menu handlers
+  const handleContextMenu = useCallback((nodeId: string, x: number, y: number) => {
+    setContextMenu({ x, y, nodeId })
+  }, [])
+
+  const closeContextMenu = useCallback(() => setContextMenu(null), [])
+
+  const containerWidth = containerRef.current?.clientWidth ?? 800
+  const containerHeight = containerRef.current?.clientHeight ?? 600
+
   return (
-    <div className="flex h-screen" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
+    <div
+      className="flex h-screen"
+      style={{ background: 'var(--bg)', color: 'var(--text)' }}
+      onClick={closeContextMenu}
+    >
       <Sidebar
         selectedNode={selectedNode}
         provider={provider}
@@ -207,14 +247,19 @@ export default function CanvasPage() {
         onSendToBack={handleSendToBack}
         onEditInChat={undefined}
       />
-      <div className="flex-1 relative">
+      <div
+        ref={containerRef}
+        className="flex-1 relative"
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={handleFileDrop}
+      >
         <CanvasToolbar
           onAddShape={handleAddShape}
           onAddWidget={handleAddWidget}
           onAddDocument={handleAddDocument}
           onAddImage={handleAddImage}
         />
-        <Canvas onTransformChange={(_x, _y, z) => setZoom(z)}>
+        <Canvas onTransformChange={(x, y, z) => { setViewportX(x); setViewportY(y); setZoom(z) }}>
           {state.nodes.length === 0 && (
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center opacity-50">
               <p className="text-lg mb-2">Start by adding pins and generating your first page in the Setup tab</p>
@@ -245,9 +290,62 @@ export default function CanvasPage() {
                 const n = state.nodes.find(x => x.id === id)
                 if (n) pushState(updateNode(state, id, { excludeFromExport: !n.excludeFromExport }))
               }}
+              onContextMenu={handleContextMenu}
             />
           ))}
         </Canvas>
+        <Minimap
+          nodes={state.nodes}
+          viewportX={viewportX}
+          viewportY={viewportY}
+          viewportZoom={zoom}
+          containerWidth={containerWidth}
+          containerHeight={containerHeight}
+          onNavigate={(x, y) => { setViewportX(-x * zoom); setViewportY(-y * zoom) }}
+        />
+        {contextMenu && (
+          <div
+            className="fixed z-[100] rounded-lg shadow-xl overflow-hidden"
+            style={{
+              left: contextMenu.x,
+              top: contextMenu.y,
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              minWidth: 160,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="w-full text-left px-4 py-2 text-sm hover:bg-[var(--surface-hover)] transition-colors"
+              onClick={() => {
+                pushState(bringToFront(state, contextMenu.nodeId))
+                closeContextMenu()
+              }}
+            >
+              Bring to Front
+            </button>
+            <button
+              className="w-full text-left px-4 py-2 text-sm hover:bg-[var(--surface-hover)] transition-colors"
+              onClick={() => {
+                pushState(sendToBack(state, contextMenu.nodeId))
+                closeContextMenu()
+              }}
+            >
+              Send to Back
+            </button>
+            <div style={{ height: 1, background: 'var(--border)' }} />
+            <button
+              className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-[var(--surface-hover)] transition-colors"
+              onClick={() => {
+                pushState(removeNode(state, contextMenu.nodeId))
+                setSelectedIds(prev => { const next = new Set(prev); next.delete(contextMenu.nodeId); return next })
+                closeContextMenu()
+              }}
+            >
+              Delete
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
