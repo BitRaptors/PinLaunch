@@ -36,8 +36,6 @@ export default function ArtboardNode({ width, height, data, selected, isVisible,
       className="relative"
       style={{
         width, height: height + 36,
-        outline: selected ? '2px solid #3b82f6' : 'none',
-        outlineOffset: '2px',
       }}
     >
       <div

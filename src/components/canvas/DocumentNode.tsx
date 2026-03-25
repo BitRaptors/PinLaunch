@@ -48,8 +48,8 @@ export default function DocumentNode({ width, height, data, selected, onMouseDow
         width, height,
         background: 'rgba(var(--surface-rgb, 30, 30, 34), 0.85)',
         borderRadius: 'var(--radius-md)',
-        outline: selected ? '2px solid #3b82f6' : '1px solid var(--border)',
-        outlineOffset: selected ? '2px' : '0',
+        outline: '1px solid var(--border)',
+        outlineOffset: '0',
         padding: '12px',
       }}
       onMouseDown={onMouseDown}

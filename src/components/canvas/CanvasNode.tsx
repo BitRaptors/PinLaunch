@@ -117,6 +117,11 @@ export default function CanvasNodeComponent({ node, selected, zoom, onSelect, on
         top: visualY,
         zIndex: node.zIndex,
         cursor: dragging ? 'grabbing' : 'grab',
+        outline: selected ? '2px solid rgba(34, 197, 94, 0.7)' : 'none',
+        outlineOffset: '4px',
+        backgroundColor: selected ? 'rgba(34, 197, 94, 0.06)' : 'transparent',
+        borderRadius: '4px',
+        padding: selected ? '2px' : '0',
       }}
       onContextMenu={handleContextMenu}
     >

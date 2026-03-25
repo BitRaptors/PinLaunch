@@ -54,8 +54,6 @@ export default function WidgetNode({ width, height, data, selected, onMouseDown 
       className="relative cursor-move"
       style={{
         width, height,
-        outline: selected ? '2px solid #3b82f6' : 'none',
-        outlineOffset: '2px',
       }}
       onMouseDown={onMouseDown}
     >
