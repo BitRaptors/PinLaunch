@@ -191,6 +191,24 @@ export default function ProjectsDropdown({ onSelectProject, onNewProject }: Proj
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
+                      fetch("/api/projects/reveal", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ siteDir: project.site_dir }),
+                      });
+                    }}
+                    className="flex h-6 w-6 items-center justify-center rounded text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text)]"
+                    title="Show in file explorer"
+                  >
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                      <line x1="12" y1="11" x2="12" y2="17" />
+                      <polyline points="9 14 12 11 15 14" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
                       setEditingId(project.id);
                       setEditName(project.name);
                     }}

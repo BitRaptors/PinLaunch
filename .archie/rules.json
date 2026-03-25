@@ -1,0 +1,955 @@
+{
+  "rules": [
+    {
+      "id": "placement-0",
+      "check": "file_placement",
+      "description": "Each feature gets its own directory with route.ts",
+      "allowed_dirs": [
+        "src/app/api/[feature]/"
+      ],
+      "severity": "warn",
+      "keywords": [
+        "each",
+        "feature",
+        "gets",
+        "its",
+        "own",
+        "directory",
+        "route"
+      ]
+    },
+    {
+      "id": "placement-1",
+      "check": "file_placement",
+      "description": "Parameterized routes use Next.js bracket conventions",
+      "allowed_dirs": [
+        "src/app/api/[feature]/[id]/"
+      ],
+      "severity": "warn",
+      "keywords": [
+        "parameterized",
+        "routes",
+        "next",
+        "bracket",
+        "conventions"
+      ]
+    },
+    {
+      "id": "placement-2",
+      "check": "file_placement",
+      "description": "All UI components live flat in src/components",
+      "allowed_dirs": [
+        "src/components/"
+      ],
+      "severity": "warn",
+      "keywords": [
+        "all",
+        "components",
+        "live",
+        "flat",
+        "src",
+        "components"
+      ]
+    },
+    {
+      "id": "placement-3",
+      "check": "file_placement",
+      "description": "Shared backend logic and DB access go in src/lib",
+      "allowed_dirs": [
+        "src/lib/"
+      ],
+      "severity": "warn",
+      "keywords": [
+        "shared",
+        "backend",
+        "logic",
+        "access",
+        "src",
+        "lib"
+      ]
+    },
+    {
+      "id": "placement-4",
+      "check": "file_placement",
+      "description": "Tests co-located with implementation in src/lib",
+      "allowed_dirs": [
+        "src/lib/"
+      ],
+      "severity": "warn",
+      "keywords": [
+        "tests",
+        "located",
+        "implementation",
+        "src",
+        "lib"
+      ]
+    },
+    {
+      "id": "placement-5",
+      "check": "file_placement",
+      "description": "App Router pages and layouts only in src/app",
+      "allowed_dirs": [
+        "src/app/"
+      ],
+      "severity": "warn",
+      "keywords": [
+        "app",
+        "router",
+        "pages",
+        "layouts",
+        "only",
+        "src",
+        "app"
+      ]
+    },
+    {
+      "id": "naming-0",
+      "check": "naming",
+      "description": "API route files: route.ts (fixed filename) (e.g. src/app/api/health/route.ts)",
+      "pattern": "",
+      "severity": "warn",
+      "keywords": [
+        "api",
+        "route",
+        "route",
+        "fixed",
+        "filename"
+      ]
+    },
+    {
+      "id": "naming-1",
+      "check": "naming",
+      "description": "React components: PascalCase with feature suffix (e.g. GeneratePanel.tsx)",
+      "pattern": "",
+      "severity": "warn",
+      "keywords": [
+        "react",
+        "components",
+        "pascalcase",
+        "feature",
+        "suffix"
+      ]
+    },
+    {
+      "id": "naming-2",
+      "check": "naming",
+      "description": "Library functions: camelCase verb+noun (e.g. streamClaudeGeneration)",
+      "pattern": "",
+      "severity": "warn",
+      "keywords": [
+        "library",
+        "functions",
+        "camelcase",
+        "verb",
+        "noun"
+      ]
+    },
+    {
+      "id": "naming-3",
+      "check": "naming",
+      "description": "Test files: [module].test.ts or [module].integration.test.ts (e.g. generate.test.ts)",
+      "pattern": "",
+      "severity": "warn",
+      "keywords": [
+        "test",
+        "module",
+        "test",
+        "module",
+        "integration",
+        "test"
+      ]
+    },
+    {
+      "id": "layer-0",
+      "check": "file_placement",
+      "description": "API Route Handlers files belong in src/app/api/",
+      "allowed_dirs": [
+        "src/app/api/"
+      ],
+      "severity": "warn",
+      "keywords": [
+        "api",
+        "route",
+        "handlers",
+        "src",
+        "app",
+        "api"
+      ]
+    },
+    {
+      "id": "layer-1",
+      "check": "file_placement",
+      "description": "Application Service Layer files belong in src/lib/",
+      "allowed_dirs": [
+        "src/lib/"
+      ],
+      "severity": "warn",
+      "keywords": [
+        "application",
+        "service",
+        "layer",
+        "src",
+        "lib"
+      ]
+    },
+    {
+      "id": "layer-2",
+      "check": "file_placement",
+      "description": "Infrastructure Layer files belong in src/lib/db.ts",
+      "allowed_dirs": [
+        "src/lib/db.ts"
+      ],
+      "severity": "warn",
+      "keywords": [
+        "infrastructure",
+        "layer",
+        "src",
+        "lib"
+      ]
+    },
+    {
+      "id": "layer-3",
+      "check": "file_placement",
+      "description": "Feature Components files belong in src/components/",
+      "allowed_dirs": [
+        "src/components/"
+      ],
+      "severity": "warn",
+      "keywords": [
+        "feature",
+        "components",
+        "src",
+        "components"
+      ]
+    },
+    {
+      "id": "layer-4",
+      "check": "file_placement",
+      "description": "Pages/Views Layer files belong in src/app/",
+      "allowed_dirs": [
+        "src/app/"
+      ],
+      "severity": "warn",
+      "keywords": [
+        "pages",
+        "views",
+        "layer",
+        "src",
+        "app"
+      ]
+    },
+    {
+      "id": "dep-dir-0-Application Service ",
+      "check": "dependency_direction",
+      "description": "Application Service Layer (src/lib/) must not import from API Route Handlers (src/app/api/)",
+      "forbidden_imports": [
+        "src/app/api/"
+      ],
+      "applies_to": "src/lib/",
+      "severity": "warn",
+      "keywords": [
+        "api",
+        "route",
+        "handlers",
+        "application",
+        "service",
+        "layer",
+        "import",
+        "dependency"
+      ]
+    },
+    {
+      "id": "dep-dir-0-Infrastructure Layer",
+      "check": "dependency_direction",
+      "description": "Infrastructure Layer (src/lib/db.ts) must not import from API Route Handlers (src/app/api/)",
+      "forbidden_imports": [
+        "src/app/api/"
+      ],
+      "applies_to": "src/lib/db.ts",
+      "severity": "warn",
+      "keywords": [
+        "api",
+        "route",
+        "handlers",
+        "infrastructure",
+        "layer",
+        "import",
+        "dependency"
+      ]
+    },
+    {
+      "id": "dep-dir-1-Infrastructure Layer",
+      "check": "dependency_direction",
+      "description": "Infrastructure Layer (src/lib/db.ts) must not import from Application Service Layer (src/lib/)",
+      "forbidden_imports": [
+        "src/lib/"
+      ],
+      "applies_to": "src/lib/db.ts",
+      "severity": "warn",
+      "keywords": [
+        "application",
+        "service",
+        "layer",
+        "infrastructure",
+        "layer",
+        "import",
+        "dependency"
+      ]
+    },
+    {
+      "id": "dep-dir-4-Feature Components",
+      "check": "dependency_direction",
+      "description": "Feature Components (src/components/) must not import from Pages/Views Layer (src/app/)",
+      "forbidden_imports": [
+        "src/app/"
+      ],
+      "applies_to": "src/components/",
+      "severity": "warn",
+      "keywords": [
+        "pages",
+        "views",
+        "layer",
+        "feature",
+        "components",
+        "import",
+        "dependency"
+      ]
+    },
+    {
+      "id": "scope-0",
+      "check": "out_of_scope",
+      "description": "Out of scope: User authentication/authorization",
+      "boundary": "User authentication/authorization",
+      "severity": "warn",
+      "keywords": [
+        "user",
+        "authentication",
+        "authorization"
+      ]
+    },
+    {
+      "id": "scope-1",
+      "check": "out_of_scope",
+      "description": "Out of scope: Mobile or desktop platforms",
+      "boundary": "Mobile or desktop platforms",
+      "severity": "warn",
+      "keywords": [
+        "mobile",
+        "desktop",
+        "platforms"
+      ]
+    },
+    {
+      "id": "scope-2",
+      "check": "out_of_scope",
+      "description": "Out of scope: Microservices or separate backend",
+      "boundary": "Microservices or separate backend",
+      "severity": "warn",
+      "keywords": [
+        "microservices",
+        "separate",
+        "backend"
+      ]
+    },
+    {
+      "id": "scope-3",
+      "check": "out_of_scope",
+      "description": "Out of scope: GraphQL API layer",
+      "boundary": "GraphQL API layer",
+      "severity": "warn",
+      "keywords": [
+        "graphql",
+        "api",
+        "layer"
+      ]
+    },
+    {
+      "id": "scope-4",
+      "check": "out_of_scope",
+      "description": "Out of scope: CI/CD pipeline configuration",
+      "boundary": "CI/CD pipeline configuration",
+      "severity": "warn",
+      "keywords": [
+        "pipeline",
+        "configuration"
+      ]
+    },
+    {
+      "id": "dev-environment-0",
+      "check": "dev_rule",
+      "description": "Always initialize SQLite with WAL pragma via getDb() singleton; never create direct Database instances in route files (source: src/lib/db.ts \u2014 db.pragma('journal_mode = WAL') + singleton pattern)",
+      "rule": "Always initialize SQLite with WAL pragma via getDb() singleton; never create direct Database instances in route files",
+      "source": "src/lib/db.ts \u2014 db.pragma('journal_mode = WAL') + singleton pattern",
+      "category": "environment",
+      "severity": "warn",
+      "keywords": [
+        "always",
+        "initialize",
+        "sqlite",
+        "wal",
+        "pragma",
+        "via",
+        "getdb",
+        "singleton",
+        "never",
+        "create",
+        "direct",
+        "database",
+        "instances",
+        "route"
+      ]
+    },
+    {
+      "id": "dev-code_style-1",
+      "check": "dev_rule",
+      "description": "Always export HTTP verb functions (GET, POST, PUT, DELETE) from route.ts files; never use default exports for API routes (source: src/app/api/pins/route.ts, src/app/api/settings/route.ts \u2014 named export pattern)",
+      "rule": "Always export HTTP verb functions (GET, POST, PUT, DELETE) from route.ts files; never use default exports for API routes",
+      "source": "src/app/api/pins/route.ts, src/app/api/settings/route.ts \u2014 named export pattern",
+      "category": "code_style",
+      "severity": "warn",
+      "keywords": [
+        "always",
+        "export",
+        "http",
+        "verb",
+        "functions",
+        "get",
+        "post",
+        "put",
+        "delete",
+        "route",
+        "never",
+        "default",
+        "exports",
+        "api",
+        "routes"
+      ]
+    },
+    {
+      "id": "dev-testing-2",
+      "check": "dev_rule",
+      "description": "Always mirror ClaudeTerminal.tsx SSE event handler logic in src/lib/stream-parsing.test.ts when adding new event types (source: src/lib/stream-parsing.test.ts \u2014 duplicates handleEvent, handleToolUse, TOOL_ICONS from ClaudeTerminal)",
+      "rule": "Always mirror ClaudeTerminal.tsx SSE event handler logic in src/lib/stream-parsing.test.ts when adding new event types",
+      "source": "src/lib/stream-parsing.test.ts \u2014 duplicates handleEvent, handleToolUse, TOOL_ICONS from ClaudeTerminal",
+      "category": "testing",
+      "severity": "warn",
+      "keywords": [
+        "always",
+        "mirror",
+        "claudeterminal",
+        "tsx",
+        "sse",
+        "event",
+        "handler",
+        "logic",
+        "src",
+        "lib",
+        "stream",
+        "parsing",
+        "test",
+        "when",
+        "adding",
+        "new",
+        "event",
+        "types"
+      ]
+    },
+    {
+      "id": "dev-testing-3",
+      "check": "dev_rule",
+      "description": "Always run tests with vitest run (not vitest watch) for non-interactive CI execution (source: package.json \u2014 'test': 'vitest run')",
+      "rule": "Always run tests with vitest run (not vitest watch) for non-interactive CI execution",
+      "source": "package.json \u2014 'test': 'vitest run'",
+      "category": "testing",
+      "severity": "warn",
+      "keywords": [
+        "always",
+        "run",
+        "tests",
+        "vitest",
+        "run",
+        "not",
+        "vitest",
+        "watch",
+        "non",
+        "interactive",
+        "execution"
+      ]
+    },
+    {
+      "id": "dev-dependency_management-4",
+      "check": "dev_rule",
+      "description": "Always use npm; no yarn or pnpm \u2014 project uses package-lock.json exclusively (source: package-lock.json lockfileVersion 3 present; no yarn.lock or pnpm-lock.yaml)",
+      "rule": "Always use npm; no yarn or pnpm \u2014 project uses package-lock.json exclusively",
+      "source": "package-lock.json lockfileVersion 3 present; no yarn.lock or pnpm-lock.yaml",
+      "category": "dependency_management",
+      "severity": "warn",
+      "keywords": [
+        "always",
+        "npm",
+        "yarn",
+        "pnpm",
+        "project",
+        "uses",
+        "package",
+        "lock",
+        "json",
+        "exclusively"
+      ]
+    },
+    {
+      "id": "dev-code_style-5",
+      "check": "dev_rule",
+      "description": "Always add 'use client' directive to components using useState/useEffect; omit for server-only layout/page files (source: src/components/GeneratePanel.tsx, ClaudeTerminal.tsx \u2014 all interactive components are client components)",
+      "rule": "Always add 'use client' directive to components using useState/useEffect; omit for server-only layout/page files",
+      "source": "src/components/GeneratePanel.tsx, ClaudeTerminal.tsx \u2014 all interactive components are client components",
+      "category": "code_style",
+      "severity": "warn",
+      "keywords": [
+        "always",
+        "add",
+        "client",
+        "directive",
+        "components",
+        "using",
+        "usestate",
+        "useeffect",
+        "omit",
+        "server",
+        "only",
+        "layout",
+        "page"
+      ]
+    },
+    {
+      "id": "pattern-0",
+      "check": "pattern_required",
+      "description": "Pattern: Server-Sent Events (SSE) Streaming \u2014 Long-running AI generation producing real-time progress",
+      "pattern_name": "Server-Sent Events (SSE) Streaming",
+      "when_to_use": "Long-running AI generation producing real-time progress",
+      "how_it_works": "API route returns ReadableStream with text/event-stream; frontend reads via fetch + TextDecoder line buffering",
+      "severity": "warn",
+      "keywords": [
+        "server",
+        "sent",
+        "events",
+        "sse",
+        "streaming",
+        "long",
+        "running",
+        "generation",
+        "producing",
+        "real",
+        "time",
+        "progress"
+      ]
+    },
+    {
+      "id": "pattern-1",
+      "check": "pattern_required",
+      "description": "Pattern: Direct REST fetch \u2014 CRUD operations on pins, settings, presets, GitHub fetch",
+      "pattern_name": "Direct REST fetch",
+      "when_to_use": "CRUD operations on pins, settings, presets, GitHub fetch",
+      "how_it_works": "Frontend calls fetch() with async/await; manages loading/error state in useState",
+      "severity": "warn",
+      "keywords": [
+        "direct",
+        "rest",
+        "fetch",
+        "crud",
+        "operations",
+        "pins",
+        "settings",
+        "presets",
+        "github",
+        "fetch"
+      ]
+    },
+    {
+      "id": "pattern-2",
+      "check": "pattern_required",
+      "description": "Pattern: In-process function calls \u2014 API routes calling service/infrastructure layer",
+      "pattern_name": "In-process function calls",
+      "when_to_use": "API routes calling service/infrastructure layer",
+      "how_it_works": "TypeScript imports; no HTTP overhead; synchronous for SQLite, async for AI APIs",
+      "severity": "warn",
+      "keywords": [
+        "process",
+        "function",
+        "calls",
+        "api",
+        "routes",
+        "calling",
+        "service",
+        "infrastructure",
+        "layer"
+      ]
+    },
+    {
+      "id": "pattern-3",
+      "check": "pattern_required",
+      "description": "Pattern: Callback prop drilling \u2014 Child-to-parent result propagation in React tree",
+      "pattern_name": "Callback prop drilling",
+      "when_to_use": "Child-to-parent result propagation in React tree",
+      "how_it_works": "Parent passes callback as prop; child invokes on completion",
+      "severity": "warn",
+      "keywords": [
+        "callback",
+        "prop",
+        "drilling",
+        "child",
+        "parent",
+        "result",
+        "propagation",
+        "react",
+        "tree"
+      ]
+    },
+    {
+      "id": "pattern-4",
+      "check": "pattern_required",
+      "description": "Pattern: sessionStorage persistence \u2014 Preserving siteDir/sessionId/provider across page refreshes",
+      "pattern_name": "sessionStorage persistence",
+      "when_to_use": "Preserving siteDir/sessionId/provider across page refreshes",
+      "how_it_works": "useEffect writes state to sessionStorage; useState initializer reads it back",
+      "severity": "warn",
+      "keywords": [
+        "sessionstorage",
+        "persistence",
+        "preserving",
+        "sitedir",
+        "sessionid",
+        "provider",
+        "across",
+        "page",
+        "refreshes"
+      ]
+    },
+    {
+      "id": "pitfall-0",
+      "check": "pitfall",
+      "description": "Pitfall (SQLite on Vercel): data/builder.db is written to process.cwd() which is ephemeral on Vercel; all pins/settings/presets reset on redeploy",
+      "area": "SQLite on Vercel",
+      "recommendation": "Run locally or mount a persistent volume; consider migrating to Turso/LibSQL for production",
+      "severity": "warn",
+      "keywords": [
+        "sqlite",
+        "vercel",
+        "data",
+        "builder",
+        "written",
+        "process",
+        "cwd",
+        "which",
+        "ephemeral",
+        "vercel",
+        "all",
+        "pins",
+        "settings",
+        "presets",
+        "reset",
+        "redeploy"
+      ]
+    },
+    {
+      "id": "pitfall-1",
+      "check": "pitfall",
+      "description": "Pitfall (SSE line buffering): TCP fragmentation can split a JSON event across multiple read() chunks; missing the buffer = lines.pop() pattern will cause JSON.parse errors",
+      "area": "SSE line buffering",
+      "recommendation": "Always use the split('\\n') + pop() remainder buffer pattern as in ClaudeTerminal.tsx; validated in src/lib/stream-parsing.test.ts",
+      "severity": "warn",
+      "keywords": [
+        "sse",
+        "line",
+        "buffering",
+        "tcp",
+        "fragmentation",
+        "can",
+        "split",
+        "json",
+        "event",
+        "across",
+        "multiple",
+        "read",
+        "chunks",
+        "missing",
+        "buffer",
+        "lines",
+        "pop",
+        "pattern",
+        "will",
+        "cause",
+        "json",
+        "parse",
+        "errors"
+      ]
+    },
+    {
+      "id": "pitfall-2",
+      "check": "pitfall",
+      "description": "Pitfall (better-sqlite3 in Next.js API routes): better-sqlite3 is synchronous and native; it cannot be used in Edge Runtime or client components; will crash if imported in 'use client' files",
+      "area": "better-sqlite3 in Next.js API routes",
+      "recommendation": "Never import src/lib/db.ts in components; always access via fetch to /api/* routes",
+      "severity": "warn",
+      "keywords": [
+        "better",
+        "sqlite",
+        "next",
+        "api",
+        "routes",
+        "better",
+        "sqlite",
+        "synchronous",
+        "native",
+        "cannot",
+        "used",
+        "edge",
+        "runtime",
+        "client",
+        "components",
+        "will",
+        "crash",
+        "imported",
+        "client"
+      ]
+    },
+    {
+      "id": "pitfall-3",
+      "check": "pitfall",
+      "description": "Pitfall (Preset seeding): seedPresets() only runs once on first DB connection (checked via SELECT COUNT); manually deleted presets will not be re-seeded without dropping the table",
+      "area": "Preset seeding",
+      "recommendation": "To reset presets, DELETE FROM presets then restart the server to trigger re-seed",
+      "severity": "warn",
+      "keywords": [
+        "preset",
+        "seeding",
+        "seedpresets",
+        "only",
+        "runs",
+        "once",
+        "first",
+        "connection",
+        "checked",
+        "via",
+        "select",
+        "count",
+        "manually",
+        "deleted",
+        "presets",
+        "will",
+        "not",
+        "seeded",
+        "without",
+        "dropping",
+        "table"
+      ]
+    },
+    {
+      "id": "pitfall-4",
+      "check": "pitfall",
+      "description": "Pitfall (Dual AI provider stream format mismatch): Claude uses tool_use event types; Gemini uses blocking response; ClaudeTerminal SSE parser only handles Claude event schema",
+      "area": "Dual AI provider stream format mismatch",
+      "recommendation": "Refine endpoint handles Gemini separately; do not route Gemini through the ClaudeTerminal component",
+      "severity": "warn",
+      "keywords": [
+        "dual",
+        "provider",
+        "stream",
+        "format",
+        "mismatch",
+        "claude",
+        "uses",
+        "tool",
+        "event",
+        "types",
+        "gemini",
+        "uses",
+        "blocking",
+        "response",
+        "claudeterminal",
+        "sse",
+        "parser",
+        "only",
+        "handles",
+        "claude",
+        "event",
+        "schema"
+      ]
+    },
+    {
+      "id": "tradeoff-0",
+      "check": "tradeoff_violation",
+      "description": "Trade-off: accept 'SQLite on local filesystem resets on Vercel redeploy' for benefit 'Zero-config setup for local development'",
+      "accept": "SQLite on local filesystem resets on Vercel redeploy",
+      "benefit": "Zero-config setup for local development",
+      "caused_by": "",
+      "violation_signals": [],
+      "severity": "warn",
+      "keywords": [
+        "sqlite",
+        "local",
+        "filesystem",
+        "resets",
+        "vercel",
+        "redeploy",
+        "zero",
+        "config",
+        "setup",
+        "local",
+        "development"
+      ]
+    },
+    {
+      "id": "tradeoff-1",
+      "check": "tradeoff_violation",
+      "description": "Trade-off: accept 'Types duplicated between frontend and backend (no shared package)' for benefit 'No monorepo tooling complexity'",
+      "accept": "Types duplicated between frontend and backend (no shared package)",
+      "benefit": "No monorepo tooling complexity",
+      "caused_by": "",
+      "violation_signals": [],
+      "severity": "warn",
+      "keywords": [
+        "types",
+        "duplicated",
+        "between",
+        "frontend",
+        "backend",
+        "shared",
+        "package",
+        "monorepo",
+        "tooling",
+        "complexity"
+      ]
+    },
+    {
+      "id": "tradeoff-2",
+      "check": "tradeoff_violation",
+      "description": "Trade-off: accept 'No auth layer; app is fully public' for benefit 'No session/JWT infrastructure needed for local tool'",
+      "accept": "No auth layer; app is fully public",
+      "benefit": "No session/JWT infrastructure needed for local tool",
+      "caused_by": "",
+      "violation_signals": [],
+      "severity": "warn",
+      "keywords": [
+        "auth",
+        "layer",
+        "app",
+        "fully",
+        "public",
+        "session",
+        "jwt",
+        "infrastructure",
+        "needed",
+        "local",
+        "tool"
+      ]
+    },
+    {
+      "id": "impact-2",
+      "check": "impact_radius",
+      "description": "Infrastructure Layer changes impact 2 dependents: API Route Handlers, Application Service Layer",
+      "component": "Infrastructure Layer",
+      "location": "src/lib/db.ts",
+      "depended_on_by": [
+        "API Route Handlers",
+        "Application Service Layer"
+      ],
+      "severity": "warn",
+      "keywords": [
+        "infrastructure",
+        "layer",
+        "src",
+        "lib"
+      ]
+    },
+    {
+      "id": "extend-0",
+      "check": "pattern_extension",
+      "description": "Extending 'AI Streaming Generation via SSE' requires changes in: src/lib/generate.ts, src/app/api/generate/stream/route.ts, src/components/ClaudeTerminal.tsx",
+      "capability": "AI Streaming Generation via SSE",
+      "required_touch_points": [
+        "src/lib/generate.ts",
+        "src/app/api/generate/stream/route.ts",
+        "src/components/ClaudeTerminal.tsx"
+      ],
+      "severity": "warn",
+      "keywords": [
+        "streaming",
+        "generation",
+        "via",
+        "sse"
+      ]
+    },
+    {
+      "id": "extend-1",
+      "check": "pattern_extension",
+      "description": "Extending 'SQLite Persistence via Repository Pattern' requires changes in: src/lib/db.ts, src/app/api/pins/route.ts, src/app/api/settings/route.ts",
+      "capability": "SQLite Persistence via Repository Pattern",
+      "required_touch_points": [
+        "src/lib/db.ts",
+        "src/app/api/pins/route.ts",
+        "src/app/api/settings/route.ts"
+      ],
+      "severity": "warn",
+      "keywords": [
+        "sqlite",
+        "persistence",
+        "via",
+        "repository",
+        "pattern"
+      ]
+    },
+    {
+      "id": "extend-2",
+      "check": "pattern_extension",
+      "description": "Extending 'GitHub Repo Metadata Extraction' requires changes in: src/lib/github.ts, src/app/api/github/route.ts",
+      "capability": "GitHub Repo Metadata Extraction",
+      "required_touch_points": [
+        "src/lib/github.ts",
+        "src/app/api/github/route.ts"
+      ],
+      "severity": "warn",
+      "keywords": [
+        "github",
+        "repo",
+        "metadata",
+        "extraction"
+      ]
+    },
+    {
+      "id": "extend-3",
+      "check": "pattern_extension",
+      "description": "Extending 'Dual AI Provider Runtime Switching' requires changes in: src/app/api/generate/refine/route.ts, src/app/api/generate/route.ts, src/lib/generate.ts",
+      "capability": "Dual AI Provider Runtime Switching",
+      "required_touch_points": [
+        "src/app/api/generate/refine/route.ts",
+        "src/app/api/generate/route.ts",
+        "src/lib/generate.ts"
+      ],
+      "severity": "warn",
+      "keywords": [
+        "dual",
+        "provider",
+        "runtime",
+        "switching"
+      ]
+    },
+    {
+      "id": "extend-4",
+      "check": "pattern_extension",
+      "description": "Extending 'Generated Site File Preview' requires changes in: src/app/api/preview/[...path]/route.ts, src/lib/generate.ts",
+      "capability": "Generated Site File Preview",
+      "required_touch_points": [
+        "src/app/api/preview/[...path]/route.ts",
+        "src/lib/generate.ts"
+      ],
+      "severity": "warn",
+      "keywords": [
+        "generated",
+        "site",
+        "file",
+        "preview"
+      ]
+    }
+  ]
+}

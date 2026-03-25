@@ -47,3 +47,6 @@ data.db
 output/
 public/thumbnails/
 .claude/settings.local.json
+
+.archie/scan.json
+.archie/stats.jsonl

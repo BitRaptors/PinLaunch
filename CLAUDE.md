@@ -1,52 +1,83 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+> Architecture guidance for **BitRaptors/PinLaunch**
+> Style: Full-stack Next.js monolith with MVC-like layering
+> Generated: 2026-03-25T14:24:36.147605+00:00
+
+## Overview
+
+PinLaunch is a Next.js 15 full-stack web app that generates landing pages from GitHub repos using Claude or Gemini AI. Users collect inspiration pins, select style presets, connect a GitHub repo, and stream AI-generated HTML/CSS files in real-time via SSE. The stack is React 19 frontend, Next.js API routes as backend, SQLite via better-sqlite3 for persistence, and Anthropic/Google AI SDKs for generation. Architecture follows App Router conventions with components in src/components, API handlers in src/app/api, and shared business logic in src/lib.
+
+## Architecture
+
+**Style:** Single Next.js app serving both frontend and backend API routes
+**Structure:** layered
+
+Eliminates cross-service complexity; API routes share TypeScript types with frontend; simpler deployment
+
+**Key trade-offs:**
+- SQLite on local filesystem resets on Vercel redeploy → Zero-config setup for local development
+- Types duplicated between frontend and backend (no shared package) → No monorepo tooling complexity
+- No auth layer; app is fully public → No session/JWT infrastructure needed for local tool
+
+**Runs on:** Vercel (inferred from Next.js 15 + no Docker/cloud config; local dev also supported)
+**Compute:** Vercel Serverless Functions for src/app/api/* routes, Vercel Edge Network for static assets
+
+## Architecture Diagram
+
+```mermaid
+graph TD
+    Browser[Browser] --> Home[page.tsx Root]
+    Home --> GenPanel[GeneratePanel]
+    Home --> PinBoard[PinBoard]
+    Home --> Preview[PreviewFrame]
+    Home --> Refine[RefinementChat]
+    GenPanel --> Terminal[ClaudeTerminal]
+    Terminal -->|SSE fetch| StreamAPI[/api/generate/stream]
+    Refine -->|POST| RefineAPI[/api/generate/refine]
+    PinBoard -->|GET/POST| PinsAPI[/api/pins]
+    Preview -->|GET| PreviewAPI[/api/preview/...path]
+    StreamAPI --> GenLib[src/lib/generate.ts]
+    RefineAPI --> GenLib
+    GenLib -->|tool-use| Claude[Anthropic Claude]
+    GenLib -->|fallback| Gemini[Google Gemini]
+    GenLib -->|writes files| FS[Output Filesystem]
+    StreamAPI --> DB[(SQLite db.ts)]
+    PinsAPI --> DB
+```
 
 ## Commands
 
 ```bash
-npm run dev          # Start Next.js dev server (http://localhost:3000)
-npm run build        # Production build
-npm run test         # Run all tests (vitest)
-npm run test:watch   # Run tests in watch mode
-npx vitest run src/lib/generate.test.ts  # Run a single test file
+# dev
+npm run dev
+# build
+npm run build
+# start
+npm start
+# test
+npm test (vitest run)
+# lint
+npm run lint
 ```
 
-Alternatively, `bash start.sh` handles dependency install, .env setup, data directory creation, and starts the dev server.
+## Key Rules
 
-## Architecture
+Detailed architecture rules are split into topic files under `.claude/rules/`:
 
-PinLaunch is an AI-powered landing page builder. Users curate inspiration pins, connect a GitHub repo, select design presets, and generate a landing page via Gemini API or Claude Code CLI.
+- `architecture.md` — Components, file placement, naming conventions
+- `patterns.md` — Communication patterns, key decisions
+- `guidelines.md` — Implementation guidelines
+- `pitfalls.md` — Common pitfalls, error mapping
+- `dev-rules.md` — Development rules (always/never imperatives)
+- `mcp-tools.md` — MCP server tool reference
+- `frontend.md` — Frontend rules (when applicable)
 
-### Three layers
+## Architecture MCP Server (MANDATORY)
 
-1. **Frontend** — Next.js 15 + React 19 + Tailwind CSS v4. Single-page app with dual-mode UI: setup panels (pins, GitHub, presets, generate) → preview mode (iframe + refinement chat). Session state stored in `sessionStorage`.
+The `architecture-blueprints` MCP server is the single source of truth.
+You MUST call `where_to_put` before creating files and `check_naming` before naming components.
+See `.claude/rules/mcp-tools.md` for the full tool reference and workflow.
 
-2. **API Routes** (`src/app/api/`) — Next.js route handlers. Key routes:
-   - `generate/` — sync Gemini generation
-   - `generate/stream/` — streaming Claude Code generation via SSE
-   - `generate/refine/` — post-generation refinement (resumes Claude session or re-prompts Gemini)
-   - `preview/[...path]/` — serves generated site files from `output/site-{timestamp}/`
-   - `pins/`, `presets/`, `settings/`, `github/`, `screenshot/`, `health/` — CRUD and utilities
-
-3. **Data** — SQLite via `better-sqlite3` (WAL mode). DB file at `data/builder.db`. Three tables: `pins`, `settings` (key-value), `presets` (one-active-per-category constraint).
-
-### Generation pipeline
-
-Prompt assembly in `src/lib/generate.ts` composes: system role from `src/lib/prompts.json` → section blueprint → active presets → pin descriptions → GitHub repo intelligence (README sections, dependencies, file tree via Octokit) → user guidance → output format instructions.
-
-- **Gemini path**: HTTP API call, returns JSON `{filepath: content}`, files written to `output/site-{timestamp}/`
-- **Claude path**: Spawns `claude` CLI with `--output-format stream-json`, streams SSE to `ClaudeTerminal` component, writes files directly
-
-### Conventions
-
-- Components: PascalCase `.tsx` files with default exports in `src/components/`
-- Backend modules: lowercase names, named exports in `src/lib/`
-- API routes: export named async functions matching HTTP methods (`GET`, `POST`, `PUT`, `DELETE`)
-- Tests: co-located with source in `src/lib/`, use vitest `describe`/`it`/`expect`
-- Path alias: `@/*` maps to `src/*`
-
-### Environment
-
-- `GEMINI_API_KEY` — required for Gemini generation (set in `.env` or via Settings UI)
-- GitHub token and AI provider choice are stored in the SQLite `settings` table, configured through the Settings panel
+---
+*Auto-generated from structured architecture analysis. Place in project root.*
