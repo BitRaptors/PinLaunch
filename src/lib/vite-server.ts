@@ -1,7 +1,6 @@
 import { spawn, ChildProcess } from "child_process";
 import path from "path";
 import fs from "fs";
-import net from "net";
 
 export interface ViteSetupEvent {
   type: "vite-setup";
@@ -19,26 +18,6 @@ interface ServerInfo {
 }
 
 const servers = new Map<string, ServerInfo>();
-let nextPort = 5173;
-
-function isPortFree(port: number): Promise<boolean> {
-  return new Promise((resolve) => {
-    const srv = net.createServer();
-    srv.once("error", () => resolve(false));
-    srv.once("listening", () => {
-      srv.close(() => resolve(true));
-    });
-    srv.listen(port, "127.0.0.1");
-  });
-}
-
-async function allocatePort(): Promise<number> {
-  for (let attempts = 0; attempts < 100; attempts++) {
-    const port = nextPort++;
-    if (await isPortFree(port)) return port;
-  }
-  throw new Error("Could not find a free port for Vite dev server");
-}
 
 export function detectViteProject(outputDir: string): boolean {
   const pkgPath = path.join(outputDir, "package.json");
@@ -55,18 +34,11 @@ export function getViteServer(siteDir: string): ServerInfo | undefined {
   return servers.get(siteDir);
 }
 
-async function waitForServer(url: string, timeoutMs = 60000): Promise<void> {
-  const start = Date.now();
-  while (Date.now() - start < timeoutMs) {
-    try {
-      const res = await fetch(url);
-      if (res.ok || res.status === 404) return; // Vite is up
-    } catch {
-      // not ready yet
-    }
-    await new Promise((r) => setTimeout(r, 500));
-  }
-  throw new Error(`Vite dev server did not become ready within ${timeoutMs / 1000}s`);
+/** Parse Vite's stdout for the actual local URL (e.g. "➜  Local:   http://localhost:5173/") */
+function parseViteUrl(line: string): { url: string; port: number } | null {
+  const match = line.match(/Local:\s+(https?:\/\/localhost:(\d+))/);
+  if (!match) return null;
+  return { url: match[1].replace(/\/$/, ""), port: parseInt(match[2], 10) };
 }
 
 function runNpmInstall(
@@ -122,34 +94,53 @@ export async function startViteServer(
   // npm install
   await runNpmInstall(outputDir, onEvent);
 
-  // Allocate port and start Vite
-  const port = await allocatePort();
-  const url = `http://localhost:${port}`;
+  onEvent({ type: "vite-setup", phase: "starting", message: "Starting Vite dev server..." });
 
-  onEvent({ type: "vite-setup", phase: "starting", message: `Starting Vite dev server on port ${port}...` });
-
-  const proc = spawn("npx", ["vite", "--host", "--port", String(port)], {
+  // Let Vite auto-select a free port — we parse the actual URL from stdout
+  const proc = spawn("npx", ["vite", "--host"], {
     cwd: outputDir,
     stdio: ["ignore", "pipe", "pipe"],
   });
 
-  proc.stdout?.on("data", (chunk: Buffer) => {
-    for (const line of chunk.toString().split("\n")) {
-      if (line.trim()) {
-        onEvent({ type: "vite-setup", phase: "starting-log", message: line.trim() });
+  // Wait for Vite to print its local URL to stdout
+  const result = await new Promise<{ port: number; url: string }>((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(new Error("Vite dev server did not become ready within 60s"));
+    }, 60000);
+
+    proc.stdout?.on("data", (chunk: Buffer) => {
+      for (const line of chunk.toString().split("\n")) {
+        if (line.trim()) {
+          onEvent({ type: "vite-setup", phase: "starting-log", message: line.trim() });
+        }
+        const parsed = parseViteUrl(line);
+        if (parsed) {
+          clearTimeout(timeout);
+          resolve(parsed);
+        }
       }
-    }
+    });
+
+    proc.stderr?.on("data", (chunk: Buffer) => {
+      for (const line of chunk.toString().split("\n")) {
+        if (line.trim()) {
+          onEvent({ type: "vite-setup", phase: "starting-log", message: line.trim() });
+        }
+      }
+    });
+
+    proc.on("close", (code) => {
+      clearTimeout(timeout);
+      reject(new Error(`Vite exited with code ${code} before becoming ready`));
+    });
+
+    proc.on("error", (err) => {
+      clearTimeout(timeout);
+      reject(err);
+    });
   });
 
-  proc.stderr?.on("data", (chunk: Buffer) => {
-    for (const line of chunk.toString().split("\n")) {
-      if (line.trim()) {
-        onEvent({ type: "vite-setup", phase: "starting-log", message: line.trim() });
-      }
-    }
-  });
-
-  const info: ServerInfo = { port, url, process: proc, siteDir };
+  const info: ServerInfo = { port: result.port, url: result.url, process: proc, siteDir };
   servers.set(siteDir, info);
 
   // Clean up on unexpected exit
@@ -157,17 +148,8 @@ export async function startViteServer(
     servers.delete(siteDir);
   });
 
-  // Wait for server to be ready
-  try {
-    await waitForServer(url);
-    onEvent({ type: "vite-setup", phase: "ready", message: `Dev server ready at ${url}`, url, port });
-  } catch (err: any) {
-    stopViteServer(siteDir);
-    onEvent({ type: "vite-setup", phase: "error", message: err.message });
-    throw err;
-  }
-
-  return { port, url };
+  onEvent({ type: "vite-setup", phase: "ready", message: `Dev server ready at ${result.url}`, url: result.url, port: result.port });
+  return result;
 }
 
 export function stopViteServer(siteDir: string): void {
