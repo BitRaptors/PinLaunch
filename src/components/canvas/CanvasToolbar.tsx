@@ -144,7 +144,7 @@ export default function CanvasToolbar({ onAddWebsite, onAddImage, onAddDocument,
   return (
     <div
       ref={toolbarRef}
-      className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2"
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2"
     >
       {/* Prompt input panel */}
       {promptOpen && (
